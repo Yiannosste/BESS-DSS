@@ -173,7 +173,7 @@ def fig_days(res) -> str:
         h = np.array(d["local_hour"])
         o = np.argsort(h)
         h = h[o]
-        f = lambda k: np.array(d[k])[o]  # noqa: E731
+        f = lambda k, d=d, o=o: np.array(d[k])[o]  # noqa: E731
         a = axes[0, j]
         a.step(h, f("price"), color=INK, lw=1.3, where="post")
         a.set_title(titles[key], fontsize=9.5)

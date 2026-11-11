@@ -42,7 +42,9 @@ def _pava(y: np.ndarray, w: np.ndarray) -> np.ndarray:
             v = (vals[-2] * wts[-2] + vals[-1] * wts[-1]) / (wts[-2] + wts[-1])
             ww = wts[-2] + wts[-1]
             c = cnt[-2] + cnt[-1]
-            vals.pop(); wts.pop(); cnt.pop()
+            vals.pop()
+            wts.pop()
+            cnt.pop()
             vals[-1], wts[-1], cnt[-1] = v, ww, c
     return np.repeat(vals, cnt)
 

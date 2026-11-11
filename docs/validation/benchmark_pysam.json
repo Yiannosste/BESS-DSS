@@ -1,0 +1,54 @@
+{
+ "inputs": {
+  "pv_mwh": 1577.89083914,
+  "mean_price": 114.170513413242
+ },
+ "ours": {
+  "pv_only_revenue": 89506.73475441005,
+  "perfect": {
+   "revenue": 142755.9910694395,
+   "gain": 53249.25631502946,
+   "discharged_mwh": 368.62059873949875,
+   "cycles": 335.1157282309667,
+   "charged_mwh": 418.8870440221576
+  },
+  "persistence": {
+   "revenue": 131076.56697097374,
+   "gain": 41569.83221656369,
+   "discharged_mwh": 369.81202114489497,
+   "cycles": 336.19885920189
+  },
+  "rules": {
+   "revenue": 134351.16946565823,
+   "gain": 44844.43471124818,
+   "discharged_mwh": 362.13977036348365,
+   "cycles": 329.22395894787513
+  }
+ },
+ "pysam_own_dispatch": {
+  "batt_annual_charge_energy": 258.87148885673196,
+  "batt_annual_discharge_energy": 226.78371324423784,
+  "batt_annual_energy_loss": 32.08777561249409,
+  "batt_annual_energy_system_loss": 0.0,
+  "revenue": 105925.08254547305,
+  "export_mwh": 1482.6874299619058,
+  "batt_to_grid_mwh": 226.78371324423787,
+  "rte": 87.60474714530942,
+  "cycles": 327.0,
+  "gain": 20786.858830751647,
+  "baseline_revenue": 85138.2237147214
+ },
+ "pysam_physics_with_our_schedule": {
+  "batt_annual_charge_energy": 398.9340139421713,
+  "batt_annual_discharge_energy": 350.7965860213601,
+  "batt_annual_energy_loss": 48.13742792081117,
+  "batt_annual_energy_system_loss": 0.0,
+  "revenue": 135951.16751040256,
+  "export_mwh": 1466.6377776531624,
+  "batt_to_grid_mwh": 350.7965860213603,
+  "rte": 87.93348618105323,
+  "cycles": 388.0,
+  "gain": 50812.94379568116,
+  "baseline_revenue": 85138.2237147214
+ }
+}

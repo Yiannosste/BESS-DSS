@@ -12,7 +12,13 @@ from pydantic import ValidationError
 
 from bessdss.config import Park, RegulatoryConfig, Study, SupportScheme
 from bessdss.dispatch.lp import DispatchParams
-from bessdss.dispatch.simulate import YearInputs, greek_local_hour, simulate_pv_only, simulate_with_battery, static_cap_mw
+from bessdss.dispatch.simulate import (
+    YearInputs,
+    greek_local_hour,
+    simulate_pv_only,
+    simulate_with_battery,
+    static_cap_mw,
+)
 from bessdss.regulatory.compliance import check, summary_status
 from bessdss.sizing.search import candidate_grid, legal_minimum_energy_mwh
 from bessdss.study import PathSet

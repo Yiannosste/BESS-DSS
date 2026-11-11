@@ -17,7 +17,14 @@ from bessdss.market.library import ScenarioLibrary
 from bessdss.regulatory.compliance import check, summary_status
 from bessdss.risk.analysis import full_risk_report
 from bessdss.sizing.search import legal_minimum_energy_mwh, screen_and_refine
-from bessdss.study import PathSet, StudyContext, _converted_no_battery, economics, marginal_cycle_cost, run_design
+from bessdss.study import (
+    PathSet,
+    StudyContext,
+    _converted_no_battery,
+    economics,
+    marginal_cycle_cost,
+    run_design,
+)
 
 
 def _market_job(args):

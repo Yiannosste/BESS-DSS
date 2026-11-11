@@ -53,7 +53,7 @@ class FleetDispatch:
         self._build()
 
     def _build(self):
-        T, J, K, dt = self.T, self.J, self.K, self.dt
+        T, J, K = self.T, self.J, self.K
         # column layout: [c (J*T) | d (J*T) | s (J*T) | curt (T) | y (T*K)]
         self.oc, self.od, self.os = 0, J * T, 2 * J * T
         self.ocurt = 3 * J * T
@@ -100,7 +100,7 @@ class FleetDispatch:
         key = tuple((u.eta_charge, u.eta_discharge) for u in units)
         if self._h is not None and key == self._eta_key:
             return self._h
-        T, J, dt = self.T, self.J, self.dt
+        T, dt = self.T, self.dt
         A = self._A_base.tolil()
         t = np.arange(T)
         for j, u in enumerate(units):

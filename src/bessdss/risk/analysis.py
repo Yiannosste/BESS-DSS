@@ -87,11 +87,11 @@ def tornado(ctx: StudyContext, econ: DesignEconomics, paths: PathSet) -> list[di
 
     n = len(paths.capture)
     lo, hi = A.low_high("capex_uncertainty_multiplier")
-    rows.append(dict(factor="Κόστος εγκατάστασης (x%.2f έως x%.2f)" % (lo, hi), low=run(with_paths(capex_mult=np.full(n, hi))), high=run(with_paths(capex_mult=np.full(n, lo)))))
+    rows.append(dict(factor=f"Κόστος εγκατάστασης (x{lo:.2f} έως x{hi:.2f})", low=run(with_paths(capex_mult=np.full(n, hi))), high=run(with_paths(capex_mult=np.full(n, lo)))))
     sig = A.central("spread_model_error_sigma")
     rows.append(dict(factor="Σφάλμα μοντέλου τιμών (±1 τυπική απόκλιση)", low=run(with_paths(model_err=np.full(n, np.exp(-sig)))), high=run(with_paths(model_err=np.full(n, np.exp(sig))))))
     lo, hi = A.low_high("forecast_capture_factor")
-    rows.append(dict(factor="Ποιότητα πρόβλεψης (%.2f έως %.2f)" % (lo, hi), low=run(with_paths(capture=np.full(n, lo))), high=run(with_paths(capture=np.full(n, hi)))))
+    rows.append(dict(factor=f"Ποιότητα πρόβλεψης ({lo:.2f} έως {hi:.2f})", low=run(with_paths(capture=np.full(n, lo))), high=run(with_paths(capture=np.full(n, hi)))))
     # weather: every year is the driest or the sunniest weather year of the park
     y = np.array([ctx.pv_h[w].sum() for w in ctx.weather_years])
     W = econ.design.gross.shape[2]

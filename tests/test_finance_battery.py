@@ -5,8 +5,8 @@ import pytest
 
 from bessdss.battery.model import (
     BatterySpec,
-    LinearDegradation,
     BlastLfpGr250Ah,
+    LinearDegradation,
     YearUsage,
     rainflow_cycles,
 )

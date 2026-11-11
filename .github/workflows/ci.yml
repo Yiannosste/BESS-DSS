@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" scikit-learn xlrd openpyxl
+      - name: Lint
+        run: ruff check src tests scripts
+      - name: Tests (offline, on the committed data)
+        run: pytest -q
+      - name: Registers and rendered documents are in sync
+        run: |
+          python scripts/merge_regulatory.py
+          python scripts/build_docs.py
+          git diff --exit-code -- docs/DECISION_LOG.md docs/DIFFICULTIES.md docs/REGULATORY_REGISTER.md docs/ASSUMPTIONS.md docs/DATA_PROVENANCE.md docs/INNOVATION_LOG.md registers/regulatory.yaml

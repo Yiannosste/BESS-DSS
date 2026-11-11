@@ -222,7 +222,8 @@ class DispatchLP:
         rlo = self._rlo.copy()
         rup[0:T] = pv_avail
         rup[T : 2 * T] = export_cap
-        rhs0 = self._keep * min(soc0, p.energy_usable_mwh)
+        # clamp: a solution is only feasible to solver tolerance, so yesterday's final SoC can be -1e-9
+        rhs0 = self._keep * min(max(soc0, 0.0), p.energy_usable_mwh)
         rlo[3 * T] = rhs0
         rup[3 * T] = rhs0
         if p.max_cycles_per_day is not None:
