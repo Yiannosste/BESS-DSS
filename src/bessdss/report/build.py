@@ -273,7 +273,8 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
         ("Κόστος εγκατάστασης", eur(b["capex_eur"])), ("NPV, μέσος όρος", eur(b["npv_mean"])), ("NPV στο κακό σενάριο (P90)", eur(b["npv_p90"])),
         ("Πιθανότητα ζημιάς", pct(b["prob_npv_negative"], 0)), ("IRR έργου (P50)", pct(b["irr_p50"])), ("Απόσβεση (P50)", num(b["payback_p50"], 1, " έτη") if np.isfinite(b["payback_p50"]) else "ποτέ μέσα στη ζωή"),
         ("DSCR στο κακό σενάριο", num(b["dscr_min_p90"], 2)), ("Πρόσθετο έσοδο 1ου έτους (P50)", eur(b["revenue_y1_p50"])),
-        ("Κόστος ανά MWh που εκφορτίζει (LCOS)", eur(b["lcos_p50"])), ("CAPEX που μηδενίζει την NPV", eur(be["break_even_capex_eur_per_kwh"]) + "/kWh"),
+        ("Κόστος ανά MWh που εκφορτίζει (LCOS)", eur(b["lcos_p50"])),
+        ("CAPEX που μηδενίζει την NPV", (eur(be["break_even_capex_eur_per_kwh"]) + "/kWh") if be["capex_multiplier_for_zero_npv"] > 0 else "κανένα"),
     ]
     P.append("<div class='tiles'>" + "".join(f"<div class='tile'><div class='k'>{k}</div><div class='v'>{v}</div></div>" for k, v in tiles) + "</div>")
     if res["compliance_status"] == "fail":
@@ -298,7 +299,7 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
     rows = [[m["category"], num(m["power_mw"], 2), num(m["energy_mwh"], 2), num(m["duration_h"], 1), eur(m["capex_eur"]), eur(m["npv_mean"]), eur(m["npv_p90"]), pct(m["prob_npv_negative"], 0), pct(m["irr_p50"]), num(m["dscr_min_p90"], 2)] for m in res["finals"]]
     P.append(_table(["Κατηγορία", "MW", "MWh", "Ώρες", "CAPEX", "NPV μέσος", "NPV P90", "Πιθ. ζημιάς", "IRR P50", "DSCR P90"], rows, num_cols=range(1, 10)))
     mg = res["marginal"]
-    P.append(f"<p>Οριακή αξία στο επιλεγμένο μέγεθος (από τα duals της βελτιστοποίησης): ένα επιπλέον MW ισχύος αλλάζει την αναμενόμενη NPV κατά <b>{eur(mg['dnpv_dpower'])}</b> και μία επιπλέον MWh χωρητικότητας κατά <b>{eur(mg['dnpv_denergy'])}</b>. Αρνητική τιμή στη χωρητικότητα σημαίνει ότι η μπαταρία θα ήταν καλύτερη μικρότερη, αν το επέτρεπε ο κανόνας της μίας ώρας.</p>")
+    P.append(f"<p>Οριακή αξία στο επιλεγμένο μέγεθος (από τα duals της βελτιστοποίησης): ένα επιπλέον MW ισχύος αλλάζει την αναμενόμενη NPV κατά <b>{eur(mg['dnpv_dpower'])}</b> και μία επιπλέον MWh χωρητικότητας κατά <b>{eur(mg['dnpv_denergy'])}</b>. Αρνητική τιμή στη χωρητικότητα σημαίνει ότι η μπαταρία θα ήταν καλύτερη μικρότερη, αν το επέτρεπε ο κανόνας της μίας ώρας. Οι τιμές είναι προσεγγιστικές: τα duals κάθε ημέρας δεν βλέπουν την ενέργεια που μεταφέρεται στην επόμενη και υποεκτιμούν το οριακό έσοδο κατά 20 έως 30%. Το πρόσημο και η τάξη μεγέθους είναι αξιόπιστα.</p>")
     rows = [[m["category"], num(m["power_mw"], 2), num(m["energy_mwh"], 2), num(m["duration_h"], 1), eur(m["capex_eur"]), eur(m["npv_mean"]), eur(m["npv_p90"]), eur(m["revenue_y1_p50"])] for m in res["screening"]]
     P.append("<details><summary>Όλοι οι συνδυασμοί της πρώτης διαλογής (ωριαία ανάλυση, τρία καιρικά έτη)</summary>" + _table(["Κατηγορία", "MW", "MWh", "Ώρες", "CAPEX", "NPV μέσος", "NPV P90", "Έσοδο 1ου έτους"], rows, num_cols=range(1, 8)) + "</details>")
 
@@ -306,6 +307,9 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
     P.append("<h2>3. Από πού έρχεται η αξία</h2>")
     P.append("<p>Το πρόσθετο έσοδο έχει δύο μέρη. Το πρώτο είναι το κόστος της μετατροπής: το πάρκο γίνεται σταθμός με αποθήκευση και αποκτά μόνιμο όριο έγχυσης (και στην κατηγορία 11Β χάνει την ενίσχυση). Το δεύτερο είναι αυτό που κερδίζει η μπαταρία: ενέργεια που σώζεται από το όριο, από περικοπές και από ώρες μηδενικής τιμής, και μετακίνηση σε ακριβότερες ώρες.</p>")
     P.append(f"<img class='sm' src='{fig_decomposition(res)}' alt='Ανάλυση αξίας'>")
+    pen_y1 = res["design_detail"]["penalty"][0][0]
+    if pen_y1 < -0.2 * max(res["design_detail"]["base_rev"][0][0], 1.0):
+        P.append("<div class='warnbox'><b>Το κόστος μετατροπής κυριαρχεί.</b> Με την προσθήκη μπαταρίας το πάρκο χάνει μεγάλο μέρος του σημερινού του εσόδου (απώλεια ενίσχυσης ή ενέργειας πάνω από το όριο έγχυσης). Αν η αιτία είναι σύμβαση ενίσχυσης που λήγει, αξίζει να ξανατρέξει η μελέτη με έναρξη λειτουργίας της μπαταρίας μετά τη λήξη (πεδίο <code>cod_year</code>).</div>")
     dd = res["design_detail"]
     i = dd["scen_names"].index("central") if "central" in dd["scen_names"] else 0
     rows = [[y, eur(dd["base_rev"][i][k]), eur(dd["penalty"][i][k]), eur(dd["gross"][i][k]), num(dd["discharged"][i][k], 0), num(dd["fec"][i][k], 0), num(dd["lost_base"][i][k], 0), num(dd["lost_with"][i][k], 0)] for k, y in enumerate(dd["rep_years"])]
@@ -359,8 +363,8 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
     P.append(_table(["Μέγεθος", "Τιμή"], [
         ["Ελάχιστος DSCR, P50", num(b["dscr_min_p50"], 2)], ["Ελάχιστος DSCR στο κακό σενάριο (P90)", num(b["dscr_min_p90"], 2)],
         ["Πιθανότητα DSCR κάτω από 1 σε κάποιο έτος", pct(b["prob_dscr_below_1"], 0)], ["Απαίτηση τράπεζας (υπόθεση)", num(fin["target_dscr"], 2)],
-        ["CAPEX που μηδενίζει την αναμενόμενη NPV", f"{eur(be['break_even_capex_eur'])} ({eur(be['break_even_capex_eur_per_kwh'])}/kWh, {pct(be['capex_multiplier_for_zero_npv'], 0)} του σημερινού)"],
-        ["Επιδότηση κεφαλαίου που μηδενίζει την αναμενόμενη NPV", pct(be["subsidy_share_for_zero_npv"], 0) if be["subsidy_share_for_zero_npv"] <= 1 else "πάνω από 100%: δεν αρκεί καμία επιδότηση"],
+        ["CAPEX που μηδενίζει την αναμενόμενη NPV", f"{eur(be['break_even_capex_eur'])} ({eur(be['break_even_capex_eur_per_kwh'])}/kWh, {pct(be['capex_multiplier_for_zero_npv'], 0)} του σημερινού)" if be["capex_multiplier_for_zero_npv"] > 0 else "κανένα: η επένδυση χάνει ακόμη και με μηδενικό κόστος εγκατάστασης"],
+        ["Επιδότηση κεφαλαίου που μηδενίζει την αναμενόμενη NPV", pct(be["subsidy_share_for_zero_npv"], 0) if 0 <= be["subsidy_share_for_zero_npv"] <= 1 else "πάνω από 100%: δεν αρκεί καμία επιδότηση"],
     ]))
 
     # 7 compliance

@@ -1,0 +1,315 @@
+{
+ "duals": {
+  "design": [
+   "11A",
+   2.1,
+   8.3
+  ],
+  "rep_years": [
+   2027,
+   2029,
+   2031,
+   2034,
+   2037,
+   2041
+  ],
+  "marginal_power_fd": [
+   3614.0,
+   2926.0,
+   2594.0,
+   2806.0,
+   3630.0,
+   3810.0
+  ],
+  "marginal_power_dual": [
+   2944.0,
+   1522.0,
+   1177.0,
+   1581.0,
+   2701.0,
+   3119.0
+  ],
+  "marginal_energy_fd": [
+   17920.0,
+   8801.0,
+   6820.0,
+   5747.0,
+   2773.0,
+   2963.0
+  ],
+  "marginal_energy_dual": [
+   14731.0,
+   6660.0,
+   5062.0,
+   4100.0,
+   1665.0,
+   2011.0
+  ],
+  "rel_err_power": 0.32692595514468736,
+  "rel_err_energy": 0.2397781079950657,
+  "seconds_per_design": 2.2,
+  "note": "finite differences need 4 extra simulations, the duals need none",
+  "_seconds": 10.5
+ },
+ "cycle_cost": {
+  "design": [
+   "11A",
+   2.1,
+   5.6
+  ],
+  "baseline_cycle_cost": 14.3,
+  "rows": [
+   {
+    "cycle_cost": 0.0,
+    "npv_mean": -944480,
+    "fec_year1": 313,
+    "soh_end": 0.843,
+    "revenue_y1": 104317
+   },
+   {
+    "cycle_cost": 7.1,
+    "npv_mean": -947592,
+    "fec_year1": 302,
+    "soh_end": 0.872,
+    "revenue_y1": 104185
+   },
+   {
+    "cycle_cost": 14.3,
+    "npv_mean": -956519,
+    "fec_year1": 289,
+    "soh_end": 0.887,
+    "revenue_y1": 103517
+   },
+   {
+    "cycle_cost": 28.5,
+    "npv_mean": -989391,
+    "fec_year1": 239,
+    "soh_end": 0.915,
+    "revenue_y1": 98305
+   },
+   {
+    "cycle_cost": 57.0,
+    "npv_mean": -1033590,
+    "fec_year1": 204,
+    "soh_end": 0.933,
+    "revenue_y1": 90647
+   },
+   {
+    "cycle_cost": 114.1,
+    "npv_mean": -1254299,
+    "fec_year1": 88,
+    "soh_end": 0.977,
+    "revenue_y1": 29721
+   }
+  ],
+  "best_cycle_cost": 0.0,
+  "npv_gain_vs_baseline": 12039,
+  "_seconds": 62.0
+ },
+ "degradation": {
+  "blast_lfp_gr_250ah": {
+   "npv_mean": -956519,
+   "soh_year5": 0.936,
+   "soh_year10": 0.906,
+   "soh_end": 0.887,
+   "revenue_last_year": 28072
+  },
+  "linear": {
+   "npv_mean": -978924,
+   "soh_year5": 0.906,
+   "soh_year10": 0.826,
+   "soh_end": 0.754,
+   "revenue_last_year": 23846
+  },
+  "npv_difference": -22405,
+  "_seconds": 20.9
+ },
+ "rebound": {
+  "market": [
+   {
+    "year": 2027,
+    "central_floor_only": {
+     "bess_gw": 1.8,
+     "tb4": 95.8,
+     "zero_hours": 1285,
+     "capture": 35.7
+    },
+    "central": {
+     "bess_gw": 3.3,
+     "tb4": 82.1,
+     "zero_hours": 1153,
+     "capture": 40.7
+    }
+   },
+   {
+    "year": 2030,
+    "central_floor_only": {
+     "bess_gw": 4.3,
+     "tb4": 67.8,
+     "zero_hours": 1460,
+     "capture": 30.4
+    },
+    "central": {
+     "bess_gw": 6.82,
+     "tb4": 57.5,
+     "zero_hours": 1263,
+     "capture": 36.9
+    }
+   },
+   {
+    "year": 2035,
+    "central_floor_only": {
+     "bess_gw": 6.0,
+     "tb4": 70.3,
+     "zero_hours": 1787,
+     "capture": 34.1
+    },
+    "central": {
+     "bess_gw": 9.0,
+     "tb4": 62.1,
+     "zero_hours": 1568,
+     "capture": 40.8
+    }
+   },
+   {
+    "year": 2041,
+    "central_floor_only": {
+     "bess_gw": 7.71,
+     "tb4": 78.4,
+     "zero_hours": 1984,
+     "capture": 35.4
+    },
+    "central": {
+     "bess_gw": 16.77,
+     "tb4": 73.9,
+     "zero_hours": 1929,
+     "capture": 40.0
+    }
+   }
+  ],
+  "battery_gross_value_by_rep_year": {
+   "central_floor_only": [
+    146837,
+    95877,
+    74224,
+    63803,
+    55025,
+    48739
+   ],
+   "central": [
+    118661,
+    63378,
+    49932,
+    43773,
+    28183,
+    28606
+   ]
+  },
+  "rep_years": [
+   2027,
+   2029,
+   2031,
+   2034,
+   2037,
+   2041
+  ],
+  "storage_path": {
+   "years": [
+    2027,
+    2029,
+    2031,
+    2034,
+    2038,
+    2042
+   ],
+   "bess_gw": [
+    3.3,
+    6.467,
+    7.17,
+    7.908,
+    12.267,
+    18.267
+   ],
+   "floor_gw": [
+    1.8,
+    3.467,
+    4.64,
+    5.66,
+    6.857,
+    8.0
+   ],
+   "annual_cost_eur_per_mw": [
+    35835.65781874363,
+    39337.39884859853,
+    41242.56527112022,
+    41984.165286037845,
+    43942.793688568534,
+    45385.945854436955
+   ],
+   "margin_at_floor": [
+    63684.75725839395,
+    52054.8881829674,
+    37120.09350984475,
+    39735.4984154181,
+    49987.03651465586,
+    55224.97451448174
+   ],
+   "margin_at_solution": [
+    51657.13669615563,
+    35005.4493771192,
+    33603.02533190251,
+    36595.37227816518,
+    39039.59415338778,
+    53218.54387538323
+   ]
+  },
+  "_seconds": 17.0
+ },
+ "forecast": {
+  "mae": {
+   "naive_yesterday": 25.0,
+   "same_weekday_last_week": 31.8,
+   "ridge_lagged_prices_and_admie_forecasts": 21.6
+  },
+  "gain": {
+   "perfect": 54810,
+   "naive_yesterday": 43667,
+   "same_weekday_last_week": 38598,
+   "ridge_lagged_prices_and_admie_forecasts": 48418,
+   "clock_rule": 45979
+  },
+  "capture": {
+   "naive_yesterday": 0.797,
+   "same_weekday_last_week": 0.704,
+   "ridge_lagged_prices_and_admie_forecasts": 0.883,
+   "clock_rule": 0.839
+  },
+  "features": [
+   "load_da_fc_mw",
+   "pv_da_fc_mw",
+   "wind_da_fc_mw"
+  ],
+  "note": "11A station, PV charging only, 0.5 MW / 1.22 MWh on a 1.1 MWp park, real prices",
+  "_seconds": 1.4
+ },
+ "replay": {
+  "11A": {
+   "pv_only": 89507,
+   "conversion_penalty": -2054,
+   "battery_gross": 59794,
+   "net": 57740,
+   "cycles": 342,
+   "eur_per_mw_year": 119588
+  },
+  "11B": {
+   "pv_only": 89507,
+   "conversion_penalty": -41447,
+   "battery_gross": 79567,
+   "net": 38121,
+   "cycles": 473,
+   "eur_per_mw_year": 159135
+  },
+  "note": "real 15-minute prices Nov 2025 to Oct 2026, perfect foresight, 0.5 MW / 1.22 MWh, merchant 1 MW park",
+  "_seconds": 1.5
+ }
+}

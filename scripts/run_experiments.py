@@ -147,9 +147,10 @@ def exp_forecast():
     n0 = len(H)
     try:
         fc = pd.read_parquet(ROOT / "data/processed/res_forecast_gr.parquet").set_index("ts_utc")
-        cols = [c for c in fc.columns if "forecast" in c and fc[c].notna().mean() > 0.9][:3]
-        F = fc[cols].reindex(pd.date_range(hist.index[-len(H) * 24], periods=len(allP) * 24, freq="1h", tz="UTC")).ffill().bfill().to_numpy().reshape(len(allP), 24, -1)
-        resid = (F[:, :, 0] - F[:, :, 1:].sum(axis=2)) if F.shape[2] >= 2 else F[:, :, 0]
+        cols = ["load_da_fc_mw", "pv_da_fc_mw", "wind_da_fc_mw"]
+        start = idx[0] - pd.Timedelta(days=n0)
+        F = fc[cols].reindex(pd.date_range(start, periods=len(allP) * 24, freq="1h", tz="UTC")).ffill().bfill().to_numpy().reshape(len(allP), 24, 3)
+        resid = (F[:, :, 0] - F[:, :, 1] - F[:, :, 2]) / 1000.0  # day-ahead forecast of residual load, GW
     except Exception:
         cols, resid = [], np.zeros_like(allP)
     naive = allP[n0 - 1 : -1]
@@ -172,7 +173,6 @@ def exp_forecast():
     dp = DispatchParams(0.5, 1.1, eta, eta, degradation_cost_eur_mwh=14.0, max_cycles_per_day=1.5)
     actual = P.reshape(-1)
     y = YearInputs(1.0, pv, actual, np.zeros(len(actual)), local_hour=greek_local_hour(2026, len(actual), 1.0), steps_per_day=24)
-    from bessdss.dispatch.simulate import _converted_no_battery  # noqa: F401
     base = _conv(park, reg, y)
     out = {"mae": {}, "gain": {}, "capture": {}}
     perfect = simulate_with_battery(park, reg, y, 2026, dp, lookahead_days=0).revenue_eur - base

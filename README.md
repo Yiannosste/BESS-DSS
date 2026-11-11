@@ -83,6 +83,7 @@ finance_overrides: {} # προαιρετικά: π.χ. {capex_subsidy_frac: 0.3,
 | Έγγραφο | Τι απαντά |
 |:-|:-|
 | [`docs/stages/STAGE_0.md`](docs/stages/STAGE_0.md) έως [`STAGE_4.md`](docs/stages/STAGE_4.md) | Τι έγινε, τι βρέθηκε, τι αποφασίστηκε και τι μένει ανοιχτό σε κάθε stage |
+| [`docs/METHODS.md`](docs/METHODS.md) | Οι μέθοδοι και οι εξισώσεις, με το τι επικυρώθηκε και τι όχι |
 | [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) | Κάθε απόφαση με τις επιλογές που απορρίφθηκαν |
 | [`docs/DIFFICULTIES.md`](docs/DIFFICULTIES.md) | Κάθε δυσκολία, χωρίς ωραιοποίηση |
 | [`docs/LESSONS_FOR_TEAMS.md`](docs/LESSONS_FOR_TEAMS.md) | Τι θα συναντήσουν οι ομάδες και με ποια σειρά να το πιάσουν |
