@@ -1,0 +1,21 @@
+# Παράδειγμα Α: πάρκο 1 MW με σύμβαση διαφορικής προσαύξησης (ΣΕΔΠ), Θεσσαλία.
+# Τα στοιχεία είναι ενδεικτικά (όχι πραγματικό πάρκο). Η τιμή αναφοράς είναι τυπική τάξη μεγέθους, όχι από σύμβαση.
+park:
+  name: "Πάρκο Α: 1 MW ΣΕΔΠ, Λάρισα"
+  lat: 39.64
+  lon: 22.42
+  pv_dc_kwp: 1100
+  pv_ac_kw: 1000
+  grid_export_limit_kw: 1000
+  tilt_deg: 25
+  azimuth_deg: 0
+  tracking: fixed
+  commissioning_year: 2021
+  commissioning_date: "2021-03-15"
+  grid_operator: deddie
+  voltage_level: mv
+  static_injection_cap_frac: 1.0
+  support: {kind: fip, price_eur_mwh: 65.0, end_year: 2041}
+base_year: 2026
+cod_year: 2027
+life_years: 15

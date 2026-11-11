@@ -1,0 +1,82 @@
+# Σενάρια αγοράς. Δεν είναι προβλέψεις. Είναι συνεπείς ιστορίες για το πώς μπορεί να εξελιχθεί το σύστημα.
+# Όλες οι τιμές καυσίμων και CO2 είναι σε πραγματικά ευρώ 2026.
+# Σημεία αγκύρωσης ανά έτος, γραμμική παρεμβολή ενδιάμεσα.
+#
+# Πηγές για τα σημεία εκκίνησης (βλ. μητρώο υποθέσεων και ρυθμιστικό μητρώο):
+#   ΦΒ: 11,5 GWp τέλος 2025, περίπου 13 GWp Μάιος 2026 (ΣΕΦ, δευτερογενής, REG-B-042 κ.ε.).
+#   Αιολικά: 6,0 GW μέσα 2026 (ΕΛΕΤΑΕΝ, δευτερογενής).
+#   Μπαταρίες: 0,5 έως 0,7 GW φθινόπωρο 2026, στόχος 1 GW τέλος 2026. Εμπορικές με προτεραιότητα: 3,8 + 0,9 = 4,7 GW (ΚΥΑ 13.3.2025).
+#   Αντλησιοταμίευση: 0,70 GW σήμερα, Αμφιλοχία 0,68 GW το 2027.
+#   ΕΣΕΚ 2030: ΦΒ 13,5 GW (ήδη ξεπερασμένος στόχος), αιολικά 8,9 + 1,9, μπαταρίες 4,325 GW, αντλησιοταμίευση 1,93 GW. 2035: ΦΒ 18,5. 2050: ΦΒ 35,1, μπαταρίες 12.
+#   Ζήτηση 2026: 49,9 TWh (μέσο φορτίο 5,69 GW, δεδομένα συστήματος).
+#   Αέριο και CO2: δεν βρέθηκαν ανοιχτές προθεσμιακές καμπύλες. Οι τροχιές είναι ΥΠΟΘΕΣΗ με εύρος (TTF 2023 έως 2025: 30 έως 41 ευρώ/MWh, EUA 65 έως 85 ευρώ/t).
+#   saturation_shift_gw: πόσο ανεβαίνει το κατώφλι μηδενικής τιμής επειδή οι γείτονες δεν απορροφούν πια
+#     το μεσημεριανό πλεόνασμα. Ιστορικά: μείον 1,45 (2024), μείον 0,34 (2025), 0,02 (2026) GW, δηλαδή
+#     περίπου +0,7 GW τον χρόνο. Το μοντέλο βαθμονομείται στο 2025 έως 2026, άρα 0 = όπως σήμερα. ΥΠΟΘΕΣΗ.
+#   spread_scale: διόρθωση για το σφάλμα του μοντέλου στη διασπορά τιμών (1 = όπως βαθμονομήθηκε).
+#
+# entry: παράμετροι ισορροπίας ελεύθερης εισόδου αυτόνομων μπαταριών (μόνο όταν endogenous_storage_entry: true).
+#   capex σε ευρώ/kWh για μεγάλα έργα (Ember 2025: 125 USD/kWh all-in εκτός Κίνας και ΗΠΑ), ετήσια πραγματική μείωση,
+#   WACC, διάρκεια ζωής, σταθερό O&M, λοιπά έσοδα (εξισορρόπηση) σε ευρώ/MW/έτος, μέγιστος ρυθμός κατασκευής.
+scenarios:
+  - name: central
+    label: "Κεντρικό"
+    description: "Τα ΦΒ συνεχίζουν πάνω από το ΕΣΕΚ με μειούμενο ρυθμό, οι μπαταρίες φτάνουν τον στόχο του 2030, το αέριο επιστρέφει στα 30 ευρώ/MWh. Η ισχύς μπαταριών πάνω από το δεσμευμένο κατώφλι είναι ενδογενής."
+    weight: 0.35
+    endogenous_storage_entry: true
+    entry: {capex_eur_per_kwh: 135, capex_decline: 0.03, wacc: 0.08, life: 15, fom_frac: 0.02, other_revenue_eur_per_mw: [[2027, 15000], [2030, 8000], [2035, 5000]], max_build_gw_per_year: 1.5}
+    anchors:
+      - {year: 2027, pv_gw: 14.5, wind_gw: 6.3, load_twh: 51.0, flat_load_gw: 0.1, bess_gw: 1.8, bess_duration_h: 2.0, pumped_gw: 1.38, pumped_duration_h: 6, gas_eur_mwh: 38, co2_eur_t: 82, saturation_shift_gw: 0.4, spread_scale: 1.0}
+      - {year: 2030, pv_gw: 17.0, wind_gw: 7.5, load_twh: 55.0, flat_load_gw: 0.4, bess_gw: 4.3, bess_duration_h: 2.5, pumped_gw: 1.9, pumped_duration_h: 6, gas_eur_mwh: 30, co2_eur_t: 95, saturation_shift_gw: 1.0, spread_scale: 1.0}
+      - {year: 2035, pv_gw: 21.0, wind_gw: 9.5, load_twh: 62.0, flat_load_gw: 0.8, bess_gw: 6.0, bess_duration_h: 3.0, pumped_gw: 2.5, pumped_duration_h: 6, gas_eur_mwh: 30, co2_eur_t: 115, saturation_shift_gw: 1.4, spread_scale: 1.0}
+      - {year: 2042, pv_gw: 26.0, wind_gw: 11.5, load_twh: 70.0, flat_load_gw: 1.0, bess_gw: 8.0, bess_duration_h: 4.0, pumped_gw: 3.0, pumped_duration_h: 6, gas_eur_mwh: 30, co2_eur_t: 135, saturation_shift_gw: 1.6, spread_scale: 1.0}
+  - name: storage_rush
+    label: "Ταχεία αποθήκευση"
+    description: "Φθηνές μπαταρίες και γρήγορη αδειοδότηση: όλο το πρόγραμμα των 4,7 GW υλοποιείται νωρίς και η είσοδος συνεχίζεται όσο υπάρχει κέρδος. Η διαφορά τιμών συμπιέζεται γρήγορα."
+    weight: 0.2
+    endogenous_storage_entry: true
+    entry: {capex_eur_per_kwh: 110, capex_decline: 0.05, wacc: 0.07, life: 15, fom_frac: 0.02, other_revenue_eur_per_mw: [[2027, 15000], [2030, 5000], [2035, 3000]], max_build_gw_per_year: 2.5}
+    anchors:
+      - {year: 2027, pv_gw: 14.5, wind_gw: 6.3, load_twh: 51.0, flat_load_gw: 0.1, bess_gw: 2.5, bess_duration_h: 2.0, pumped_gw: 1.38, pumped_duration_h: 6, gas_eur_mwh: 38, co2_eur_t: 82, saturation_shift_gw: 0.4, spread_scale: 1.0}
+      - {year: 2030, pv_gw: 17.0, wind_gw: 7.5, load_twh: 55.0, flat_load_gw: 0.4, bess_gw: 5.6, bess_duration_h: 3.0, pumped_gw: 1.9, pumped_duration_h: 6, gas_eur_mwh: 30, co2_eur_t: 95, saturation_shift_gw: 1.0, spread_scale: 1.0}
+      - {year: 2035, pv_gw: 21.0, wind_gw: 9.5, load_twh: 62.0, flat_load_gw: 0.8, bess_gw: 8.0, bess_duration_h: 4.0, pumped_gw: 2.5, pumped_duration_h: 6, gas_eur_mwh: 30, co2_eur_t: 115, saturation_shift_gw: 1.4, spread_scale: 1.0}
+      - {year: 2042, pv_gw: 26.0, wind_gw: 11.5, load_twh: 70.0, flat_load_gw: 1.0, bess_gw: 10.0, bess_duration_h: 4.0, pumped_gw: 3.0, pumped_duration_h: 6, gas_eur_mwh: 30, co2_eur_t: 135, saturation_shift_gw: 1.6, spread_scale: 1.0}
+  - name: pv_glut
+    label: "Κορεσμός ΦΒ, αργή αποθήκευση"
+    description: "Τα ΦΒ τρέχουν, οι μπαταρίες καθυστερούν (δίκτυο, χρηματοδότηση) και οι γείτονες κορένονται. Πολλές μηδενικές τιμές και περικοπές, μεγάλη διαφορά τιμών."
+    weight: 0.15
+    endogenous_storage_entry: false
+    anchors:
+      - {year: 2027, pv_gw: 15.0, wind_gw: 6.2, load_twh: 50.5, flat_load_gw: 0.05, bess_gw: 1.3, bess_duration_h: 2.0, pumped_gw: 1.0, pumped_duration_h: 6, gas_eur_mwh: 38, co2_eur_t: 82, saturation_shift_gw: 0.6, spread_scale: 1.0}
+      - {year: 2030, pv_gw: 19.0, wind_gw: 7.0, load_twh: 53.0, flat_load_gw: 0.2, bess_gw: 2.5, bess_duration_h: 2.0, pumped_gw: 1.38, pumped_duration_h: 6, gas_eur_mwh: 32, co2_eur_t: 95, saturation_shift_gw: 1.6, spread_scale: 1.0}
+      - {year: 2035, pv_gw: 24.0, wind_gw: 8.5, load_twh: 58.0, flat_load_gw: 0.5, bess_gw: 4.0, bess_duration_h: 2.5, pumped_gw: 1.9, pumped_duration_h: 6, gas_eur_mwh: 32, co2_eur_t: 115, saturation_shift_gw: 2.2, spread_scale: 1.0}
+      - {year: 2042, pv_gw: 28.0, wind_gw: 10.0, load_twh: 64.0, flat_load_gw: 0.7, bess_gw: 5.5, bess_duration_h: 3.0, pumped_gw: 2.5, pumped_duration_h: 6, gas_eur_mwh: 32, co2_eur_t: 135, saturation_shift_gw: 2.5, spread_scale: 1.0}
+  - name: high_gas
+    label: "Ακριβό αέριο, ισχυρή ζήτηση"
+    description: "Το αέριο μένει ακριβό (όπως το φθινόπωρο του 2026), τα data centers και η ηλεκτροκίνηση ανεβάζουν τη ζήτηση. Υψηλές βραδινές τιμές. Η είσοδος μπαταριών είναι ενδογενής."
+    weight: 0.15
+    endogenous_storage_entry: true
+    entry: {capex_eur_per_kwh: 135, capex_decline: 0.03, wacc: 0.08, life: 15, fom_frac: 0.02, other_revenue_eur_per_mw: [[2027, 15000], [2030, 8000], [2035, 5000]], max_build_gw_per_year: 1.5}
+    anchors:
+      - {year: 2027, pv_gw: 14.3, wind_gw: 6.3, load_twh: 52.0, flat_load_gw: 0.2, bess_gw: 1.8, bess_duration_h: 2.0, pumped_gw: 1.38, pumped_duration_h: 6, gas_eur_mwh: 55, co2_eur_t: 90, saturation_shift_gw: 0.3, spread_scale: 1.0}
+      - {year: 2030, pv_gw: 16.5, wind_gw: 7.5, load_twh: 58.0, flat_load_gw: 0.7, bess_gw: 4.3, bess_duration_h: 2.5, pumped_gw: 1.9, pumped_duration_h: 6, gas_eur_mwh: 50, co2_eur_t: 110, saturation_shift_gw: 0.8, spread_scale: 1.0}
+      - {year: 2035, pv_gw: 20.0, wind_gw: 9.5, load_twh: 67.0, flat_load_gw: 1.3, bess_gw: 6.0, bess_duration_h: 3.0, pumped_gw: 2.5, pumped_duration_h: 6, gas_eur_mwh: 45, co2_eur_t: 135, saturation_shift_gw: 1.2, spread_scale: 1.0}
+      - {year: 2042, pv_gw: 25.0, wind_gw: 11.5, load_twh: 76.0, flat_load_gw: 1.6, bess_gw: 8.0, bess_duration_h: 4.0, pumped_gw: 3.0, pumped_duration_h: 6, gas_eur_mwh: 45, co2_eur_t: 160, saturation_shift_gw: 1.4, spread_scale: 1.0}
+  - name: low_price
+    label: "Φθηνό αέριο, στάσιμη ζήτηση"
+    description: "Περίσσεια LNG ρίχνει το αέριο στα 20 ευρώ/MWh, η ζήτηση μένει στάσιμη, το CO2 χαμηλά. Χαμηλές τιμές παντού, άρα μικρή διαφορά σε ευρώ."
+    weight: 0.15
+    endogenous_storage_entry: false
+    anchors:
+      - {year: 2027, pv_gw: 14.5, wind_gw: 6.3, load_twh: 50.0, flat_load_gw: 0.0, bess_gw: 1.8, bess_duration_h: 2.0, pumped_gw: 1.38, pumped_duration_h: 6, gas_eur_mwh: 28, co2_eur_t: 75, saturation_shift_gw: 0.4, spread_scale: 1.0}
+      - {year: 2030, pv_gw: 16.5, wind_gw: 7.5, load_twh: 50.5, flat_load_gw: 0.1, bess_gw: 4.3, bess_duration_h: 2.5, pumped_gw: 1.9, pumped_duration_h: 6, gas_eur_mwh: 20, co2_eur_t: 75, saturation_shift_gw: 1.0, spread_scale: 1.0}
+      - {year: 2035, pv_gw: 19.5, wind_gw: 9.0, load_twh: 52.0, flat_load_gw: 0.2, bess_gw: 5.5, bess_duration_h: 3.0, pumped_gw: 2.2, pumped_duration_h: 6, gas_eur_mwh: 20, co2_eur_t: 80, saturation_shift_gw: 1.5, spread_scale: 1.0}
+      - {year: 2042, pv_gw: 23.0, wind_gw: 10.5, load_twh: 54.0, flat_load_gw: 0.3, bess_gw: 6.5, bess_duration_h: 3.5, pumped_gw: 2.5, pumped_duration_h: 6, gas_eur_mwh: 20, co2_eur_t: 85, saturation_shift_gw: 1.8, spread_scale: 1.0}
+  - name: frozen_2026
+    label: "Η αγορά παγωμένη στο 2026 (μόνο για σύγκριση)"
+    description: "Δεν είναι σενάριο. Δείχνει τι θα έβγαζε η μπαταρία αν η αγορά έμενε για πάντα όπως το 2026: ίδια ΦΒ, ίδιες λίγες μπαταρίες, ίδιο ακριβό αέριο. Έτσι φαίνεται πόσο υπερεκτιμά η επανάληψη της ιστορίας. Βάρος μηδέν: δεν μπαίνει στα P50 και P90."
+    weight: 0.0
+    endogenous_storage_entry: false
+    anchors:
+      - {year: 2027, pv_gw: 13.0, wind_gw: 6.0, load_twh: 50.0, flat_load_gw: 0.0, bess_gw: 0.8, bess_duration_h: 2.0, pumped_gw: 0.7, pumped_duration_h: 6, gas_eur_mwh: 51, co2_eur_t: 78, saturation_shift_gw: 0.0, spread_scale: 1.0}
+      - {year: 2042, pv_gw: 13.0, wind_gw: 6.0, load_twh: 50.0, flat_load_gw: 0.0, bess_gw: 0.8, bess_duration_h: 2.0, pumped_gw: 0.7, pumped_duration_h: 6, gas_eur_mwh: 51, co2_eur_t: 78, saturation_shift_gw: 0.0, spread_scale: 1.0}

@@ -30,8 +30,15 @@ DC-coupled: a_e = 1/eta_inv, k_d = k_g = eta_inv, pv_avail = pv_dc, export_cap =
             (energy above the inverter limit can be stored: clipping recapture).
 
 Physical-sense safeguards
-    * Burning energy by charging and discharging at once can only pay when the import cost is
-      negative. Those days are detected and re-solved as a small MILP with one binary per interval.
+    * (POWER) bounds charging plus discharging by the rated power. A solution with both in the
+      same interval is therefore physically realisable by time-sharing: the converter charges for
+      a fraction c/P of the interval and discharges for d/P of it. A naive model without this row
+      would let the battery do both at full power, which is impossible.
+    * Such intra-interval cycling only pays when a rule makes it pay: a negative import cost
+      (paid to burn energy) or a support clawback that energy routed through the battery escapes.
+      It is reported as a diagnostic (`cycled_within_interval_mwh`) so that it is never hidden.
+      With exact=True those horizons are re-solved as a MILP with one binary per interval
+      (strictly one direction per interval); it is slower and used for verification.
     * Curtailment is the free slack of the PV constraint, so negative remuneration never forces export.
 
 The LP duals are returned because they are the exact marginal values of power and energy
@@ -89,6 +96,7 @@ class DispatchResult:
     dual_export: np.ndarray  # EUR per MW per interval (marginal value of export capacity)
     dual_cycle: float  # EUR per MWh of extra daily throughput allowance
     used_milp: bool = False
+    cycled_within_interval_mwh: float = 0.0  # energy charged and discharged inside the same interval
 
 
 class DispatchLP:
@@ -183,6 +191,7 @@ class DispatchLP:
         soc0: float = 0.0,
         soc_terminal: float = 0.0,
         commit_steps: int | None = None,
+        exact: bool = False,
     ) -> DispatchResult:
         """Solve one horizon.
 
@@ -222,6 +231,18 @@ class DispatchLP:
         h.run()
         status = h.getModelStatus()
         if status != highspy.HighsModelStatus.kOptimal:
+            # a warm start from the previous day occasionally leaves the simplex in a bad state:
+            # drop the basis and solve again from scratch before giving up
+            h.clearSolver()
+            h.run()
+            status = h.getModelStatus()
+        if status != highspy.HighsModelStatus.kOptimal:
+            h.setOptionValue("solver", "ipm")
+            h.clearSolver()
+            h.run()
+            status = h.getModelStatus()
+            h.setOptionValue("solver", "choose")
+        if status != highspy.HighsModelStatus.kOptimal:
             raise RuntimeError(f"Dispatch LP not optimal: {h.modelStatusToString(status)}")
         sol = h.getSolution()
         x = np.asarray(sol.col_value)
@@ -231,9 +252,11 @@ class DispatchLP:
         used_milp = False
 
         charge = x[T : 2 * T] + p.k * x[2 * T : 3 * T]
-        if np.any(np.minimum(charge, x[3 * T : 4 * T]) > 1e-6):
+        both = np.minimum(charge, x[3 * T : 4 * T])
+        if exact and np.any(both > 1e-6):
             x, obj = self._solve_milp(cost, clo, cup, rlo, rup)
             used_milp = True
+            both = np.zeros(T)
 
         C = T if commit_steps is None else int(commit_steps)
         sl = slice(0, C)
@@ -257,6 +280,7 @@ class DispatchLP:
             dual_export=dual_export,
             dual_cycle=float(dual_cycle),
             used_milp=used_milp,
+            cycled_within_interval_mwh=float(both[sl].sum() * dt),
         )
 
     def _solve_milp(self, cost, clo, cup, rlo, rup):

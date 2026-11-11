@@ -114,6 +114,7 @@ class RegulatoryConfig(BaseModel):
         "'nonpositive_all' is the stricter reading that EU guidelines point to (REG-B-017).",
     )
     negative_episode_scope: Literal["whole_episode", "from_third_hour"] = Field("whole_episode", description="UNCLEAR (REG-B-014)")
+    fip_two_way: bool = Field(True, description="Sliding premium is two-way: when the market reference price exceeds the reference price the producer pays back (REG-B-005, not verified in a primary text)")
     fit_exposed_to_negative_price_rule: bool = Field(False, description="Fixed tariffs are paid regardless of the market price (REG-B-016)")
     fit_subject_to_curtailment: bool = Field(True, description="Technical curtailment orders apply to every controllable park (REG-B-019)")
     curtailment_compensation_frac: float = Field(0.0, ge=0, le=1, description="No compensation mechanism in force (REG-B-023, REG-B-025)")

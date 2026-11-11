@@ -67,6 +67,7 @@ class YearResult:
     d: np.ndarray | None = None
     c: np.ndarray | None = None
     milp_days: int = 0
+    cycled_within_interval_mwh: float = 0.0  # diagnostic: energy cycled inside single intervals (rule exploitation)
 
 
 def effective_support_kind(park: Park, reg: RegulatoryConfig, year: int, with_battery: bool, coupling: str = "ac") -> str:
@@ -160,6 +161,8 @@ def remuneration(
         if y.pv_ref_price_monthly is None:
             raise ValueError("FiP settlement needs the monthly PV reference market price (pv_ref_price_monthly)")
         premium = scheme.price_eur_mwh - np.asarray(y.pv_ref_price_monthly, float)
+        if not reg.fip_two_way:
+            premium = np.maximum(premium, 0.0)
         with_aid = np.where(aid_suspended(p, y.dt_h, reg), p, p + premium)
         r_pv = with_aid
         r_dis = with_aid.copy() if reg.stored_energy_support == "support_price" else p.copy()
@@ -253,6 +256,7 @@ def simulate_with_battery(
     lookahead_days: int = 1,
     keep_traces: bool = False,
     lp_cache: dict | None = None,
+    exact: bool = False,
 ) -> YearResult:
     """Simulate one year with a battery of given power and usable energy.
 
@@ -298,6 +302,7 @@ def simulate_with_battery(
     mv_p = 0.0
     mv_e = 0.0
     milp_days = 0
+    cyc_in = 0.0
     s0 = 0.0
 
     def window(arr, a, fill):
@@ -333,6 +338,7 @@ def simulate_with_battery(
             soc0=s0,
             soc_terminal=0.0,
             commit_steps=spd,
+            exact=exact,
         )
         sl = slice(a, a + spd)
         e[sl], cp[sl], cg[sl], d[sl], soc[sl] = res.e, res.cp, res.cg, res.d, res.soc
@@ -340,8 +346,11 @@ def simulate_with_battery(
         mv_p += float(res.dual_power.sum())
         mv_e += float(res.dual_energy.sum())
         milp_days += int(res.used_milp)
+        cyc_in += res.cycled_within_interval_mwh
 
-    return _settle(park, reg, y, dp, r_pv, r_dis, e, cp, cg, d, soc, pv_avail, clipped, c_imp, mv_p, mv_e, milp_days, keep_traces, T)
+    out = _settle(park, reg, y, dp, r_pv, r_dis, e, cp, cg, d, soc, pv_avail, clipped, c_imp, mv_p, mv_e, milp_days, keep_traces, T)
+    out.cycled_within_interval_mwh = cyc_in
+    return out
 
 
 def _settle(park, reg, y, dp, r_pv, r_dis, e, cp, cg, d, soc, pv_avail, clipped, c_imp, mv_p, mv_e, milp_days, keep, T):

@@ -26,6 +26,15 @@ Sources
 * IRENA IRENASTAT (pxweb.irena.org): installed capacity statistics.
 * World Bank Pink Sheet, ECB reference rates, EEX primary auction reports:
   gas price (TTF), USD/EUR and EU ETS allowance price.
+
+Licences
+--------
+Day-ahead PRICES are not open data: energy-charts serves them "for private and
+internal use only", HEnEx forbids redistribution without written consent and
+ENTSO-E does not list item 12.1.D among the data free for re-use.  The price
+files written by this module are therefore meant for local analysis and must
+not be redistributed in a public repository; share this code instead.  Details
+per dataset: ``registers/data_provenance_market.yaml``.
 """
 
 from __future__ import annotations
@@ -269,6 +278,9 @@ def fetch_dam_prices(
     With ``crosscheck`` the complete official HEnEx series is downloaded as well
     (see :func:`fetch_henex_dam`) and compared interval by interval; the result
     is stored in ``dam_price_crosscheck.json``.
+
+    Licence: the API marks GR prices "for private and internal use only"; do
+    not redistribute the resulting file (see the module docstring).
     """
     df = _ec_price_frame("GR", start_year, end_year)
     df["source"] = "energy-charts.info (ENTSO-E TP 12.1.D, BZN GR)"
@@ -819,6 +831,7 @@ def fetch_imbalance(
     latest version wins).  Columns: imbalance price, mFRR up/down prices,
     activated balancing energy up/down, system deviation (from 2025 files),
     uplift account charges and the ``curt_flag`` column that newer files carry.
+    Period labels in the files are CET/CEST wall time and are converted to UTC.
     """
     end = end or _utc_now().date()
     df = _admie_collect("IMBABE", start, end, _parse_imbabe, keep_raw=keep_raw)
@@ -829,9 +842,16 @@ def fetch_imbalance(
     df = df[first + [c for c in df.columns if c not in first and c != "src_file"] + ["src_file"]]
     df["src_file"] = df["src_file"].astype("category")
     df["source"] = df["source"].astype("category")
+    # Keep the file small (about 6 MB instead of 15): prices stay as published, volumes are
+    # rounded to 0.01 MWh and uplift charges to 0.001 EUR/MWh, everything stored as float32.
+    volumes = [c for c in df.columns if c.endswith("_mwh") and "eur" not in c]
+    uplifts = [c for c in df.columns if c.startswith("uplift_")]
+    df[volumes] = df[volumes].round(2)
+    df[uplifts] = df[uplifts].round(3)
     floats = df.select_dtypes("float64").columns
-    df[floats] = df[floats].astype("float32")  # 7 significant digits are ample; halves the file size
-    _write_parquet(df, PROCESSED_DIR / "imbalance_gr.parquet")
+    df[floats] = df[floats].astype("float32")
+    path = PROCESSED_DIR / "imbalance_gr.parquet"
+    df.to_parquet(path, engine="pyarrow", compression="zstd", compression_level=19, index=False)
     log.info("imbalance_gr: %d rows %s .. %s", len(df), df.ts_utc.min(), df.ts_utc.max())
     return df
 
@@ -1372,7 +1392,7 @@ def _ecb_usd_per_eur() -> pd.DataFrame:
     )
 
 
-def _eex_eua_auctions(first_year: int = 2012) -> pd.DataFrame:
+def _eex_eua_auctions(first_year: int = 2015) -> pd.DataFrame:
     """EEX primary market auction results (one row per auction), all available years."""
     frames = []
     this_year = _utc_now().year

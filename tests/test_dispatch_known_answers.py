@@ -10,7 +10,7 @@ import pytest
 from bessdss.dispatch.lp import DispatchLP, DispatchParams
 
 
-def _solve(p, pv, cap, r_pv, r_dis, c_imp=None, imp=None, dt=1.0, **kw):
+def _solve(p, pv, cap, r_pv, r_dis, c_imp=None, imp=None, dt=1.0, **kw):  # noqa: PLR0913
     lp = DispatchLP(len(pv), dt, p)
     return lp.solve(np.array(pv, float), np.array(cap, float), np.array(r_pv, float), np.array(r_dis, float),
                     None if c_imp is None else np.array(c_imp, float),
@@ -101,7 +101,7 @@ def test_no_simultaneous_charge_discharge_at_negative_import_price():
     """Negative import cost invites 'burning' energy in an LP. The model must not do it."""
     p = DispatchParams(power_mw=1, energy_usable_mwh=1, eta_charge=0.9, eta_discharge=0.9)
     price = [-50, -50, -50, -50, 5]
-    res = _solve(p, [0] * 5, [1] * 5, price, price, c_imp=price, imp=[1] * 5)
+    res = _solve(p, [0] * 5, [1] * 5, price, price, c_imp=price, imp=[1] * 5, exact=True)
     charge = res.cp + res.cg
     assert np.all(np.minimum(charge, res.d) < 1e-6)
     # best physical plan is sequential: charge 1 MWh (+50), discharge 0.81 MWh (-40.5),
@@ -109,6 +109,12 @@ def test_no_simultaneous_charge_discharge_at_negative_import_price():
     # (An LP without the binary would 'burn' energy in the same interval and report more.)
     assert res.used_milp
     assert res.objective == pytest.approx(50 - 40.5 + 50 + 50 / 9 + 4.5, rel=1e-6)
+    # default mode: time-sharing inside the interval, never more than rated power in total,
+    # and the energy cycled this way is reported, not hidden
+    ts = _solve(p, [0] * 5, [1] * 5, price, price, c_imp=price, imp=[1] * 5)
+    assert np.all(ts.cp + ts.cg + ts.d <= 1 + 1e-9)
+    assert ts.cycled_within_interval_mwh > 0
+    assert ts.objective >= res.objective - 1e-6
 
 
 def test_dc_coupling_recovers_clipping():

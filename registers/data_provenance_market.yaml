@@ -1,0 +1,197 @@
+# Προέλευση δεδομένων αγοράς και συστήματος (ελληνική αγορά ηλεκτρισμού).
+# Παράγεται από: python scripts/fetch_market_data.py  (κώδικας: src/bessdss/data/fetch_market.py)
+# Όλες οι χρονοσφραγίδες είναι UTC, αρχή διαστήματος. Κανένα αρχείο εδώ δεν είναι συνθετικό.
+# kind: real = δημοσιευμένες μετρήσεις ή αποτελέσματα αγοράς, modelled = προϊόν μοντέλου τρίτου.
+#
+# ΑΔΕΙΕΣ ΧΡΗΣΗΣ, ΣΥΝΟΨΗ (ελέγχθηκαν 2026-11-11, δεν είναι νομική γνωμάτευση):
+#   * Οι τιμές DAM ΔΕΝ είναι ανοικτά δεδομένα σε καμία από τις τρεις πηγές:
+#     energy-charts ("private and internal use only"), HEnEx (απαγόρευση αναδημοσίευσης χωρίς γραπτή
+#     συναίνεση), ENTSO-E (το 12.1.D λείπει από τη "List of data available for free re-use").
+#     Άρα τα dam_price_gr.parquet, dam_price_henex_gr.parquet, neighbours_price.parquet δεν πρέπει να
+#     διανέμονται σε δημόσιο αποθετήριο. Διανέμεται ο κώδικας λήψης, όχι τα δεδομένα.
+#   * Ελεύθερα με CC BY 4.0 από το ENTSO-E: πρόβλεψη φορτίου (6.1.B), φυσικές ροές (12.1.G),
+#     τιμές και όγκοι αποκλίσεων (17.1.G/H), ενέργεια εξισορρόπησης (17.1).
+#   * Παραγωγή ανά τύπο (16.1.B/C), πραγματικό φορτίο (6.1.A), πρόβλεψη ΑΠΕ (14.1.D): εκτός λίστας
+#     ελεύθερης χρήσης, χρειάζεται συναίνεση του αρχικού κατόχου (ΑΔΜΗΕ) για αναδιανομή.
+
+- id: DATA-M-001
+  dataset: dam_price_gr
+  file: data/processed/dam_price_gr.parquet
+  description: "Τιμή Αγοράς Επόμενης Ημέρας Ελλάδας (ζώνη GR), στη φυσική ανάλυση. Έως 2020-10-31 είναι η Οριακή Τιμή Συστήματος (ΟΤΣ) του υποχρεωτικού pool, από 2020-11-01 η τιμή εκκαθάρισης DAM του Target Model."
+  source: "ENTSO-E Transparency Platform, στοιχείο 12.1.D, μέσω του καθρέφτη energy-charts.info (Fraunhofer ISE). Αρχικός κάτοχος δεδομένων: HEnEx (πριν το 2018 ΛΑΓΗΕ)."
+  url: "https://api.energy-charts.info/price?bzn=GR&start={YYYY}-01-01T00:00Z&end={YYYY}-12-31T23:59Z"
+  licence: "ΠΕΡΙΟΡΙΣΜΕΝΗ. Το API επιστρέφει license_info: 'The data provided herein is for private and internal use only. The utilization of any data, whether in its raw or derived form, for external or commercial purposes is expressly prohibited. Should you require licensing for market-related data, please direct your inquiries to the original data providers'. Συνέπεια: το αρχείο επιτρέπεται για εσωτερική ανάλυση, ΟΧΙ για αναδιανομή σε δημόσιο αποθετήριο ανοικτού κώδικα. Οι πρωτότυπες πηγές δεν λύνουν το πρόβλημα: (α) Όροι χρήσης HEnEx (enexgroup.gr/en/terms-of-use, II): επιτρέπεται λήψη, αποθήκευση και χρήση 'for analysis or research of your firm or company', απαγορεύεται 'republish, retransmit, redistribute' χωρίς ρητή γραπτή συναίνεση. (β) ENTSO-E: το 12.1.D δεν περιλαμβάνεται στη 'List of data available for free re-use' (έκδοση 2023-10-18, CC BY 4.0), άρα για αναδιανομή ισχύει ο όρος 3.1 των GTC (συναίνεση του Primary Owner of Data, δηλαδή του HEnEx). Πρόταση: να μη δημοσιευθεί το parquet, να δημοσιευθεί μόνο το script, ή να ζητηθεί γραπτή άδεια από το HEnEx. Στατιστικά και γραφήματα σε δημοσίευση με αναφορά πηγής είναι συνήθης πρακτική, αλλά η απόφαση ανήκει στον υπεύθυνο του έργου."
+  kind: real
+  resolution: "60 min έως 2025-09-30 21:00 UTC, 15 min από 2025-09-30 22:00 UTC (ημέρα παράδοσης 2025-10-01, 00:00 CEST)"
+  period: "2015-01-01 to 2026-11-11"
+  rows: 133298
+  known_gaps: "Κανένα κενό (0 ακανόνιστα βήματα). Αλλαγή ορισμού 2020-11-01: πριν ΟΤΣ με κατώτατο όριο 0, μετά τιμή DAM με αρνητικές τιμές επιτρεπτές (πρώτη αρνητική 2020-12-01, ελάχιστη -50 τον Μάιο 2025). Η ημέρα αγοράς είναι σε ώρα CET/CEST, όχι ώρα Ελλάδας: 23 ώρες την τελευταία Κυριακή Μαρτίου, 25 την τελευταία Κυριακή Οκτωβρίου, ελεγμένο για 2015 έως 2026. Η χρονιά 2026 είναι ανοικτή (έως ημέρα παράδοσης 2026-11-11)."
+  retrieved_on: "2026-11-10"
+  checks: "Πλήρης διασταύρωση με τα επίσημα αρχεία HEnEx EL-DAM ResultsSummary: 62259 διαστήματα σε 1994 ημέρες παράδοσης (όλες οι ημέρες 2020-11-01 έως 2025-12-31 εκτός 2021-10-05 που λείπει από το αρχείο HEnEx, και δείγμα 108 ημερών του 2026). Αποκλίσεις πάνω από 0.011 EUR/MWh: 0. Μέγιστη διαφορά 0.01 (στρογγύλευση). Ίδια στιγμή μετάβασης σε 15 min και στις δύο πηγές. Αποτελέσματα: data/processed/dam_price_crosscheck.json. Πριν το 2020-11 δεν υπάρχει δεύτερη πηγή για διασταύρωση. Πλήθος διαστημάτων ανά έτος (αρνητικά/μηδενικά): 2015 0/5, 2016 0/10, 2017 0/7, 2018 0/25, 2019 0/13, 2020 2/21, 2021 5/9, 2022 1/4, 2023 0/24, 2024 11/18, 2025 177/357, 2026 2032/1677 (τα 2025 και 2026 περιέχουν διαστήματα 15 min)."
+
+- id: DATA-M-002
+  dataset: dam_price_henex_gr
+  file: data/processed/dam_price_henex_gr.parquet
+  description: "Επίσημες τιμές εκκαθάρισης DAM από το HEnEx (Greece Mainland MCP), για διασταύρωση του DATA-M-001."
+  source: "HEnEx (Ελληνικό Χρηματιστήριο Ενέργειας), αρχεία YYYYMMDD_EL-DAM_ResultsSummary_EN_v##.xlsx. Κλειστά έτη από τα ετήσια zip της σελίδας αρχείου, τρέχον έτος από τη σελιδοποιημένη λίστα (δείγμα 1 σελίδα στις 3)."
+  url: "https://www.enexgroup.gr/en/web/guest/dam-idm-archive (ετήσια zip, σύνδεσμοι get_file?uuid=...) και https://www.enexgroup.gr/en/markets-publications-el-day-ahead-market"
+  licence: "ΠΕΡΙΟΡΙΣΜΕΝΗ. Όροι χρήσης HEnEx: 'You may not republish, retransmit, redistribute or make the data of this website available to any other party ... without our express prior written consent'. Εσωτερική έρευνα επιτρέπεται. Όχι για δημόσιο αποθετήριο."
+  kind: real
+  resolution: "60 min έως 2025-09-30, 15 min μετά"
+  period: "2020-11-01 to 2026-11-11"
+  rows: 62259
+  known_gaps: "Λείπει η ημέρα παράδοσης 2021-10-05 από το ετήσιο zip του 2021. Το 2026 είναι δείγμα (108 από 315 ημέρες). Πριν το 2020-11-01 το HEnEx δεν δημοσιεύει αρχεία αυτής της μορφής."
+  retrieved_on: "2026-11-10"
+  checks: "Ανάγνωση της γραμμής 'Greece Mainland' κάτω από 'Market Clearing Price' (μετά την 2025-10-01 η γραμμή '15min MCP'). Πλήθος MTU ανά ημέρα μόνο 23/24/25 ή 92/96/100. Η αντιστοίχιση MTU 1 = 00:00 CET επιβεβαιώθηκε από τη μηδενική απόκλιση με το ENTSO-E."
+
+- id: DATA-M-003
+  dataset: system_gr
+  file: data/processed/system_gr.parquet
+  description: "Ωριαία δεδομένα συστήματος: φορτίο, παραγωγή ανά τύπο (Φ/Β, αιολικά, αέριο, λιγνίτης, ταμιευτήρες, αντλησιοταμίευση, πετρέλαιο, μπαταρίες), φυσικές ροές ανά σύνορο και καθαρές εισαγωγές."
+  source: "ENTSO-E Transparency Platform (16.1.B/C παραγωγή ανά τύπο, 6.1.A φορτίο, 12.1.G φυσικές ροές) μέσω energy-charts.info. Αρχικός κάτοχος: ΑΔΜΗΕ."
+  url: "https://api.energy-charts.info/public_power?country=gr&start=...&end=... και https://api.energy-charts.info/cbpf?country=gr&start=...&end=..."
+  licence: "Ασαφής για αναδιανομή. Το API δεν δηλώνει άδεια για αυτά τα endpoints. Στο ENTSO-E μόνο οι φυσικές ροές (12.1.G) είναι στη λίστα ελεύθερης χρήσης CC BY 4.0. Τα 16.1.B/C και 6.1.A δεν είναι στη λίστα. Ο ΑΔΜΗΕ δημοσιεύει τα ίδια μεγέθη (SystemRealizationSCADA) χωρίς ρητή άδεια ('Copyright IPTO')."
+  kind: real
+  resolution: "60 min σε όλη την περίοδο (το ENTSO-E δεν δίνει 15 min για την Ελλάδα σε αυτά τα μεγέθη)"
+  period: "2015-01-01 to 2026-11-10"
+  rows: 103967
+  known_gaps: "Ο ωριαίος άξονας δεν έχει κενά. Τιμές NaN 2015 έως 2025: load 35, pv 73, wind 73, gas 60, lignite 352 (307 το 2015), hydro_reservoir 60, hydro_pumped_gen 90. Δεν διορθώθηκαν. Λάθος τιμές φορτίου 2022-10-31 04:00 έως 07:00 UTC (408 έως 2255 MW), αφέθηκαν όπως δημοσιεύθηκαν. Η κατανάλωση άντλησης (hydro_pumping_mw) υπάρχει μόνο από 2026-05-31 και οι μπαταρίες από 2026-06-16. Δεν υπάρχει σειρά για υδροηλεκτρικά ροής ούτε για βιομάζα/ΣΗΘΥΑ, άρα other_mw είναι κενό. Το 'Solar' δεν είναι όλα τα Φ/Β της χώρας: από 2025-07 ισούται με Φ/Β υψηλής τάσης + Φ/Β μέσης τάσης του ΑΔΜΗΕ (λόγος 1.00 έως 1.02 σε 6 ημέρες ελέγχου), χωρίς Φ/Β χαμηλής τάσης στεγών. Σε ετήσια βάση είναι 0.88 έως 0.92 της παραγωγής Φ/Β του IRENA για 2015 έως 2022, 0.97 το 2023 και 1.01 το 2024. Από το 2024 το 'Solar' είναι παραγωγή ΜΕΤΑ τις περικοπές. Η στήλη net_import_sched_mw (energy-charts 'Cross border electricity trading') διαφέρει από το άθροισμα φυσικών ροών κατά μέσο όρο 1 MW με τυπική απόκλιση 126 MW."
+  retrieved_on: "2026-11-10"
+  checks: "Μοναδικός μονότονος δείκτης, ωριαίο βήμα, μη αρνητικές παραγωγές, Φ/Β νύχτας διάμεσος 0. Σύγκριση ετήσιων συνόλων με IRENA: Φ/Β 2024 11.37 TWh έναντι 11.2 TWh, αιολικά ENTSO-E 0.73 έως 0.90 του IRENA (το IRENA περιλαμβάνει τα μη διασυνδεδεμένα νησιά). Δειγματοληπτικός έλεγχος ορισμού Φ/Β: data/processed/pv_definition_check.csv."
+
+- id: DATA-M-004
+  dataset: installed_capacity_gr
+  file: data/processed/installed_capacity_gr.csv
+  description: "Εγκατεστημένη ισχύς ανά τεχνολογία, μακρά μορφή με στήλες scope και source. Τρεις πηγές με διαφορετικό εύρος, δεν αθροίζονται."
+  source: "(1) energy-charts.info installed_power (ετήσια). (2) IRENA IRENASTAT, πίνακας Country_ELECSTAT_2026_H2 (ετήσια, MW τέλους έτους, 2000 έως 2025). (3) ΑΔΜΗΕ, κατηγορία αρχείων RESMV: εγκατεστημένη ισχύς ΑΠΕ μέσης τάσης από το αρχείο της 15ης κάθε μήνα."
+  url: "https://api.energy-charts.info/installed_power?country=gr&time_step=yearly ; https://pxweb.irena.org/api/v1/en/IRENASTAT/Power%20Capacity%20and%20Generation/Country_ELECSTAT_2026_H2_PX.px ; https://www.admie.gr/getOperationMarketFilewRange?dateStart=...&dateEnd=...&FileCategory=RESMV"
+  licence: "IRENA: ελεύθερη χρήση με αναφορά πηγής (όροι IRENASTAT). energy-charts: δεν δηλώνεται. ΑΔΜΗΕ: δεν δηλώνεται ρητή άδεια."
+  kind: real
+  resolution: "ετήσια (energy-charts 2014 έως 2025, IRENA 2000 έως 2025), μηνιαία για ΑΠΕ μέσης τάσης (2015-11 έως 2026-10)"
+  period: "2000-12-31 to 2026-10-15"
+  rows: 826
+  known_gaps: "ΜΠΑΤΑΡΙΕΣ: καμία ανοικτή σειρά MW/MWh, κενό. Μηνιαία συνολική ισχύς Φ/Β και αιολικών δεν βρέθηκε σε μηχαναγνώσιμη μορφή: ΔΑΠΕΕΠ (dapeep.gr) και HELAPCO (helapco.gr) επιστρέφουν 403 σε αυτόματη λήψη και δεν παρακάμφθηκαν. Τα μηνιαία δελτία ενέργειας ΑΔΜΗΕ είναι PDF από Power BI χωρίς πίνακες κειμένου. Η σειρά RESMV έχει ασυνέχεια εύρους τον Ιούλιο 2025: Φ/Β μέσης τάσης 1767 MW (2025-06-15) σε 4842 MW (2025-07-15), άρα πριν κάλυπτε υποσύνολο των σταθμών. Επίσης άλλαξε μονάδα (MW πριν, kW μετά, ενώ η κεφαλίδα γράφει πάντα KW), διορθώνεται στον parser. Το IRENA δεν δίνει για την Ελλάδα αέριο, λιγνίτη, πετρέλαιο χωριστά (μόνο σύνολο μη ΑΠΕ). Διαφορά πηγών Φ/Β 2025: IRENA 11077 MW, energy-charts 9800 MW. Λείπουν 6 μήνες RESMV όπου δεν υπήρχε αρχείο της 15ης."
+  retrieved_on: "2026-11-11"
+  checks: "Τιμές μη αρνητικές, μονάδες MW ή MWh, χωρίς διπλοεγγραφές (date, technology, source). Φ/Β IRENA: 2604 MW το 2015, μικρή πτώση σε 2552 MW το 2017, μονότονα αύξον από 2018, 11077 MW το 2025."
+
+- id: DATA-M-005
+  dataset: imbalance_gr
+  file: data/processed/imbalance_gr.parquet
+  description: "Τιμές εκκαθάρισης αποκλίσεων ανά 15 min, τιμές mFRR άνω και κάτω, ενεργοποιημένη ενέργεια εξισορρόπησης άνω και κάτω, απόκλιση συστήματος, χρεώσεις λογαριασμών προσαυξήσεων ΛΠ1 έως ΛΠ3, σημαία περικοπών (Curt_Flag)."
+  source: "ΑΔΜΗΕ, API αρχείων, κατηγορία IMBABE (Activated Balancing Energy and Settlement Prices), ένα xlsx ανά εβδομάδα, κρατιέται η πιο πρόσφατη έκδοση."
+  url: "https://www.admie.gr/getOperationMarketFilewRange?dateStart=YYYY-MM-DD&dateEnd=YYYY-MM-DD&FileCategory=IMBABE"
+  licence: "Ασαφής: ο ΑΔΜΗΕ δεν δηλώνει άδεια δεδομένων (σελίδα όρων χωρίς ρήτρα επαναχρησιμοποίησης, 'Copyright IPTO'). Τα ίδια μεγέθη (τιμές και όγκοι αποκλίσεων, 17.1.G/H) είναι στη λίστα ελεύθερης χρήσης CC BY 4.0 του ENTSO-E."
+  kind: real
+  resolution: "15 min"
+  period: "2020-11-01 to 2026-11-01"
+  rows: 210432
+  known_gaps: "Κανένα κενό τετάρτου (2192 ημέρες επί 96). Αλλαγές μορφής: στήλες IDEV/UDEV υπάρχουν 2021-06 έως 2025-06, οι στήλες 'ISP energy' και 'System deviation' από 2025-07-14, το Curt_Flag από 2025-07-18. Η τιμή mFRR είναι κενή όταν δεν έγινε ενεργοποίηση (9% άνω, 7% κάτω). Ώρα αρχείων CET/CEST: στην αλλαγή ώρας 668 ή 676 γραμμές την εβδομάδα. Ακραίες τιμές στην έναρξη της αγοράς (2020-11 έως 2021: -1000 έως 4230 EUR/MWh). 2022 έως 2024 καμία αρνητική τιμή απόκλισης, από 2025 ξανά αρνητικές (ελάχιστη -50 το 2025, -100 το 2026). Οι τελευταίες εβδομάδες είναι προσωρινές εκδόσεις (v1) που αναθεωρούνται από τον ΑΔΜΗΕ έως και 2 μήνες μετά."
+  retrieved_on: "2026-11-11"
+  checks: "Συνεχής άξονας 15 min, αντιστοίχιση ώρας με έλεγχο ότι η τελευταία ετικέτα κάθε αρχείου συμπίπτει με την υπολογισμένη. Αρνητικές τιμές ανά έτος: 2020 2047, 2021 1812, 2022 0, 2023 0, 2024 0, 2025 2727, 2026 5774. Μηδενικές: 2021 2892, 2022 2184, 2023 1437, 2024 3742, 2025 1791."
+
+- id: DATA-M-006
+  dataset: curtailment_gr
+  file: data/processed/curtailment_gr.parquet
+  description: "Προγραμματισμένες περικοπές ΑΠΕ σε επίπεδο συστήματος: η γραμμή 'Energy Surplus' των αποτελεσμάτων της Διαδικασίας Ενοποιημένου Προγραμματισμού (ISP1, ISP2, ISP3) του ΑΔΜΗΕ, μαζί με την πρόβλεψη ΑΠΕ και φορτίου του ISP1."
+  source: "ΑΔΜΗΕ, API αρχείων, κατηγορίες ISP1ISPResults, ISP2ISPResults, ISP3ISPResults (ένα xlsx ανά ημέρα κατανομής και εκτέλεση)."
+  url: "https://www.admie.gr/getOperationMarketFilewRange?dateStart=YYYY-MM-DD&dateEnd=YYYY-MM-DD&FileCategory=ISP1ISPResults (ομοίως ISP2ISPResults, ISP3ISPResults)"
+  licence: "Ασαφής: ο ΑΔΜΗΕ δεν δηλώνει άδεια δεδομένων."
+  kind: real
+  resolution: "30 min έως 2025-09-30, 15 min από 2025-10-01"
+  period: "2020-11-01 to 2026-11-11 (πρόβλεψη ΑΠΕ και φορτίου ISP1), 2024-01-19 to 2026-11-11 (περικοπές)"
+  rows: 124850
+  known_gaps: "ΤΙ ΕΙΝΑΙ: εκ των προτέρων εντολή περικοπής από τον Διαχειριστή (τύπου ανακατανομής, redispatch), σε MW, δηλαδή η ενέργεια ΑΠΕ που το πρόγραμμα ISP δεν μπορούσε να απορροφήσει. ΤΙ ΔΕΝ ΕΙΝΑΙ: δεν είναι μετρημένη περικομμένη ενέργεια, δεν περιέχει περικοπές πραγματικού χρόνου μετά το τελευταίο ISP, ούτε περικοπές του ΔΕΔΔΗΕ στο δίκτυο διανομής, ούτε εθελοντική περικοπή μέσω αγοράς (σταθμοί που δεν πούλησαν σε μηδενικές ή αρνητικές τιμές). Η γραμμή 'Energy Surplus' υπάρχει στα αρχεία από 2024-01-19 και είναι μη μηδενική από 2024-03-05. Πριν από αυτό η στήλη είναι NaN (άγνωστο, όχι μηδέν). Ο ΑΔΜΗΕ δεν δημοσιεύει απολογιστικές περικοπές σε μηχαναγνώσιμη μορφή: τα μηνιαία δελτία ενέργειας (PDF) δεν έχουν σχετικό πίνακα. Το curtail_sched_mw παίρνει ISP3 όπου υπάρχει (δεύτερο μισό ημέρας), αλλιώς ISP2, αλλιώς ISP1. Λείπουν 9 ημέρες κατανομής από τα αρχεία ISP1 (2020-11-08, 2020-12-02, 2020-12-08, 2021-02-08, 2021-02-20, 2021-09-24, 2021-12-06, 2022-04-17, 2026-01-11), 2 από ISP2 (2024-01-25, 2024-01-27) και 5 από ISP3 (2024-03-11, 2025-02-09, 2025-03-05, 2025-08-16, 2025-09-26). Οι 8 πρώτες φαίνονται ως κενά μίας ημέρας στον άξονα χρόνου. Το έτος 2024 καλύπτει ουσιαστικά Μάρτιο έως Δεκέμβριο."
+  retrieved_on: "2026-11-11"
+  checks: "Μη αρνητικές τιμές, μέγιστο 7217 MW. Ετήσια σύνολα curtail_sched_mw: 2024 899 GWh, 2025 1867 GWh, 2026 έως 11 Νοε 2316 GWh. Μόνο ISP1: 935, 1911, 2388 GWh, δηλαδή 3.7%, 7.0% και 8.1% της πρόβλεψης ΑΠΕ του ISP1. Το 96% της ενέργειας πέφτει 06:00 έως 16:00 UTC. Διασταύρωση με το ανεξάρτητο Curt_Flag των αρχείων IMBABE (2025-07-18 έως 2026-11-01, 45316 τέταρτα): το 87% των τετάρτων με σημαία 1 έχει προγραμματισμένη περικοπή πάνω από 0 και το 90% των τετάρτων με σημαία 0 έχει μηδενική. Έλεγχος αλλαγής ώρας: 46/50 ή 92/100 περίοδοι τις ημέρες αλλαγής, ώρα αρχείων CET/CEST."
+
+- id: DATA-M-007
+  dataset: res_forecast_gr
+  file: data/processed/res_forecast_gr.parquet
+  description: "Ωριαίες προβλέψεις επόμενης ημέρας (Φ/Β, αιολικά, φορτίο) δίπλα στις πραγματικές τιμές, για μοντελοποίηση σφάλματος πρόβλεψης. Επιπλέον ο ωριαίος μέσος της πρόβλεψης ΑΠΕ και φορτίου του ISP1 του ΑΔΜΗΕ."
+  source: "ENTSO-E Transparency Platform (14.1.D πρόβλεψη αιολικών και ηλιακών, 6.1.B πρόβλεψη φορτίου) μέσω energy-charts.info public_power_forecast. Πραγματικές τιμές από DATA-M-003. Στήλες *_isp1_* από DATA-M-006."
+  url: "https://api.energy-charts.info/public_power_forecast?country=gr&production_type={solar|wind_onshore|load}&forecast_type=day-ahead&start=...&end=..."
+  licence: "Ασαφής για αναδιανομή (το API δεν δηλώνει άδεια). Στο ENTSO-E η πρόβλεψη φορτίου 6.1.B είναι CC BY 4.0, η πρόβλεψη ΑΠΕ 14.1.D και οι πραγματικές τιμές όχι."
+  kind: real
+  resolution: "60 min"
+  period: "2015-01-01 to 2026-11-11"
+  rows: 103990
+  known_gaps: "Λείπουν προβλέψεις Φ/Β και αιολικών για 912 ώρες το 2019 και 744 το 2020. Οι προβλέψεις Φ/Β του 2017 έχουν MAE 5 MW, μη ρεαλιστικά μικρό: πιθανόν αναδρομικά συμπληρωμένες με πραγματικές τιμές, να μη χρησιμοποιηθούν για βαθμονόμηση σφάλματος. Από το 2025 η πρόβλεψη Φ/Β είναι συστηματικά πάνω από το πραγματικό (μέση διαφορά +279 MW το 2025, +490 MW το 2026) επειδή το πραγματικό είναι μετά τις περικοπές: η διαφορά περιέχει περικοπές, δεν είναι καθαρό σφάλμα πρόβλεψης. Η πρόβλεψη ISP1 του ΑΔΜΗΕ αφορά όλες τις ΑΠΕ μαζί (και ΜΥΗΣ, ΣΗΘΥΑ), άρα δεν συγκρίνεται ευθέως με Φ/Β + αιολικά."
+  retrieved_on: "2026-11-11"
+  checks: "Συσχέτιση πρόβλεψης και πραγματικού ανά έτος: Φ/Β 0.96 έως 1.00, αιολικά 0.93 έως 0.97, φορτίο 0.97 έως 0.99. MAE 2024: Φ/Β 139 MW, αιολικά 179 MW, φορτίο 133 MW. Η πρόβλεψη ΑΠΕ του ISP1 έχει συσχέτιση 0.993 έως 0.999 με το άθροισμα των προβλέψεων Φ/Β και αιολικών του ENTSO-E, άρα πρόκειται για την ίδια πρόβλεψη του ΑΔΜΗΕ συν τις λοιπές ΑΠΕ (130 έως 370 MW κατά μέσο όρο)."
+
+- id: DATA-M-008
+  dataset: fuel_prices
+  file: data/processed/fuel_prices.csv
+  description: "Μηνιαία τιμή φυσικού αερίου TTF σε EUR/MWh και μηνιαία τιμή δικαιωμάτων EUA σε EUR/t. Οι επιμέρους δημοπρασίες EUA στο data/processed/eua_auctions_daily.csv."
+  source: "TTF: World Bank Commodity Price Data (Pink Sheet), σειρά 'Natural gas, Europe' σε USD/mmbtu (από 2015-04 είναι το ολλανδικό TTF). Ισοτιμία: ΕΚΤ, μηνιαίος μέσος USD ανά EUR (EXR.M.USD.EUR.SP00.A). EUA: EEX, αναφορές πρωτογενών δημοπρασιών (emission spot primary market auction report)."
+  url: "https://www.worldbank.org/en/research/commodity-markets (σύνδεσμος CMO-Historical-Data-Monthly.xlsx) ; https://data-api.ecb.europa.eu/service/data/EXR/M.USD.EUR.SP00.A?format=csvdata ; https://public.eex-group.com/eex/eua-auction-report/emission-spot-primary-market-auction-report-{YYYY}-data.xlsx"
+  licence: "World Bank: CC BY 4.0. ΕΚΤ: ελεύθερη επαναχρησιμοποίηση με αναφορά πηγής. EEX: δημόσια αρχεία χωρίς ρητή άδεια επαναχρησιμοποίησης, ασαφές."
+  kind: real
+  resolution: "μηνιαία (EUA και ανά δημοπρασία, περίπου 4 έως 5 την εβδομάδα)"
+  period: "2015-01 to 2026-10"
+  rows: 142
+  known_gaps: "EUA λείπει για 2015 και 2016 (24 μήνες): η EEX δεν έχει αρχείο στο γνωστό URL πριν το 2017. Ημερήσιο TTF δεν υπάρχει με ανοικτή άδεια, μόνο μηνιαίος μέσος. Το 'Natural gas, Europe' για 2015-01 έως 2015-03 είναι μέση τιμή εισαγωγής, όχι TTF. Η τιμή EUA είναι απλός μέσος τιμών εκκαθάρισης δημοπρασιών (EU, DE, PL), όχι τιμή κλεισίματος δευτερογενούς αγοράς. Μετατροπή: EUR/MWh = USD/mmbtu / (USD ανά EUR) / 0.29307107. Οι τιμές είναι σε ανώτερη θερμογόνο δύναμη."
+  retrieved_on: "2026-11-10"
+  checks: "Συνεχείς μήνες, επανυπολογισμός της μετατροπής, εύρος TTF 3 έως 260 EUR/MWh με μέγιστο τον Αύγουστο 2022, EUA 3 έως 110 EUR/t. Ετήσιοι μέσοι TTF: 2019 14.6, 2022 132.1, 2024 34.6, 2025 36.4. EUA: 2019 24.7, 2022 80.6, 2024 64.8, 2025 73.8. 2091 δημοπρασίες 2017-01-09 έως 2026-11-10."
+
+- id: DATA-M-009
+  dataset: neighbours_price
+  file: data/processed/neighbours_price.parquet
+  description: "Τιμές DAM γειτονικών ζωνών προσφοράς, μακρά μορφή (στήλη bzn)."
+  source: "ENTSO-E Transparency Platform 12.1.D μέσω energy-charts.info."
+  url: "https://api.energy-charts.info/price?bzn={BG|IT-South|IT-Calabria|RO}&start=...&end=..."
+  licence: "ΠΕΡΙΟΡΙΣΜΕΝΗ, όπως το DATA-M-001: 'private and internal use only'. Όχι για δημόσιο αποθετήριο."
+  kind: real
+  resolution: "60 min, 15 min από 2025-10-01"
+  period: "BG 2016-11-01 to 2026-11-11, IT-South 2015-01-05 to 2026-11-11, IT-Calabria 2021-01-01 to 2026-11-11, RO 2015-01-01 to 2026-11-11"
+  rows: 463836
+  known_gaps: "Το energy-charts δεν δίνει τιμές για MK, AL, TR (σφάλμα 400) ούτε ζώνη IT-Brindisi με πλήρη ιστορία. Κενά μίας έως δύο ημερών: BG 11 (τα περισσότερα Νοέμβριο και Δεκέμβριο 2016), RO 4 (2015 έως 2018), IT-Calabria 1 (2026-08-07), IT-South κανένα. Το BG έχει ακραία τιμή 3119 EUR/MWh. Η στήλη price_eur_mwh είναι float32."
+  retrieved_on: "2026-11-11"
+  checks: "Χωρίς διπλοεγγραφές (ts_utc, bzn), εύρος -106 έως 3119 EUR/MWh. Συσχέτιση με την τιμή GR: BG 0.92, RO 0.90, IT-South 0.87, IT-Calabria 0.83. Όλες οι ζώνες περνούν σε 15 min την ίδια στιγμή (2025-09-30 22:00 UTC). Δεν έγινε διασταύρωση με δεύτερη πηγή."
+
+- id: DATA-M-010
+  dataset: pv_definition_check
+  file: data/processed/pv_definition_check.csv
+  description: "Έλεγχος του τι μετρά το 'Solar' του ENTSO-E για την Ελλάδα: ημερήσια ενέργεια σε 24 ημέρες δείγματος έναντι Φ/Β υψηλής τάσης (SystemRealizationSCADA) και Φ/Β μέσης τάσης (RESMV) του ΑΔΜΗΕ."
+  source: "ΑΔΜΗΕ, κατηγορίες SystemRealizationSCADA και RESMV. ENTSO-E μέσω energy-charts (DATA-M-003)."
+  url: "https://www.admie.gr/getOperationMarketFilewRange?...&FileCategory=SystemRealizationSCADA και ...&FileCategory=RESMV"
+  licence: "Ασαφής (ΑΔΜΗΕ)."
+  kind: real
+  resolution: "ημερήσια, 24 ημέρες (15η Ιαν, Απρ, Ιουλ, Οκτ των 2019, 2021, 2023 έως 2026)"
+  period: "2019-01-15 to 2026-10-15"
+  rows: 24
+  known_gaps: "Τα αρχεία SCADA του 2019 δεν διαβάστηκαν (άλλη διάταξη). Τα Φ/Β χαμηλής τάσης δεν μετρώνται σε κανένα ανοικτό αρχείο."
+  retrieved_on: "2026-11-11"
+  checks: "Λόγος ENTSO-E προς (ΥΤ + ΜΤ): 1.00 έως 1.02 από 2025-07, 1.4 έως 2.6 πριν (επειδή το RESMV κάλυπτε τότε υποσύνολο των Φ/Β μέσης τάσης)."
+
+# Οι δύο επόμενες εγγραφές αφορούν αρχεία που παρήγαγε ο συντονιστής του έργου
+# (scripts/fetch_nasa_power.py, scripts/fetch_pvgis_points.py). Καταγράφονται εδώ για πληρότητα.
+- id: DATA-M-011
+  dataset: nasa_power_points
+  file: data/processed/nasa_power_points.parquet
+  description: "Ωριαία ολική οριζόντια ακτινοβολία (ALLSKY_SFC_SW_DWN), ακτινοβολία καθαρού ουρανού (CLRSKY_SFC_SW_DWN) και θερμοκρασία 2 m (T2M) σε 8 αντιπροσωπευτικά σημεία της ηπειρωτικής Ελλάδας."
+  source: "NASA POWER (Prediction Of Worldwide Energy Resources), hourly API, community RE. Προέλευση: επανανάλυση MERRA-2 και δορυφορικά προϊόντα CERES, πλέγμα περίπου 0.5 μοίρας."
+  url: "https://power.larc.nasa.gov/api/temporal/hourly/point?parameters=ALLSKY_SFC_SW_DWN,CLRSKY_SFC_SW_DWN,T2M&community=RE&latitude=..&longitude=..&start=YYYYMMDD&end=YYYYMMDD&format=JSON&time-standard=UTC"
+  licence: "Ανοικτά δεδομένα NASA, ελεύθερη χρήση και αναδιανομή με αναφορά πηγής (NASA Langley Research Center POWER Project)."
+  kind: modelled
+  resolution: "60 min"
+  period: "2015-01-01 to 2026-08-31 (έγκυρες τιμές, το αρχείο εκτείνεται έως 2026-11-10 με κενές τιμές στο τέλος)"
+  rows: 103944
+  known_gaps: "Μοντελοποιημένα δεδομένα (επανανάλυση και δορυφόρος), όχι επίγειες μετρήσεις. Χονδρό πλέγμα, εξομαλύνει τοπική νέφωση. Οι τελευταίοι μήνες δεν είναι διαθέσιμοι λόγω καθυστέρησης της πηγής. Οι πιο πρόσφατοι μήνες προέρχονται από προϊόντα σχεδόν πραγματικού χρόνου και μπορεί να αναθεωρηθούν."
+  retrieved_on: "2026-11-10"
+  checks: "Καταχώριση με βάση τα στοιχεία του συντονιστή και ανάγνωση του αρχείου (103944 γραμμές, 24 στήλες, δείκτης UTC). Δεν έγινε ανεξάρτητη επικύρωση τιμών από εμένα."
+
+- id: DATA-M-012
+  dataset: pvgis_national_points
+  file: data/processed/pvgis_national_points.parquet
+  description: "Ωριαία προσομοιωμένη παραγωγή Φ/Β στα ίδια 8 σημεία, για την ανακατασκευή της δυνητικής εθνικής παραγωγής Φ/Β."
+  source: "PVGIS 5.3 (JRC, Ευρωπαϊκή Επιτροπή), εργαλείο seriescalc, ακτινοβολία SARAH3, μετεωρολογία ERA5."
+  url: "https://re.jrc.ec.europa.eu/api/v5_3/seriescalc?lat=..&lon=..&pvcalculation=1&..."
+  licence: "Ελεύθερη επαναχρησιμοποίηση με αναφορά πηγής (πολιτική επαναχρησιμοποίησης Ευρωπαϊκής Επιτροπής, CC BY 4.0)."
+  kind: modelled
+  resolution: "60 min"
+  period: "2005-01-01 to 2023-12-31"
+  rows: 166536
+  known_gaps: "Μοντελοποιημένα (δορυφορική ακτινοβολία και μοντέλο Φ/Β), όχι μετρήσεις σταθμών. Τελειώνει το 2023, δεν καλύπτει τα έτη με τις μεγάλες περικοπές. Οι παραδοχές κλίσης, αζιμουθίου και απωλειών βρίσκονται στο scripts/fetch_pvgis_points.py."
+  retrieved_on: "2026-11-10"
+  checks: "Καταχώριση με βάση τα στοιχεία του συντονιστή και ανάγνωση του αρχείου (166536 γραμμές, 8 στήλες, δείκτης UTC). Δεν έγινε ανεξάρτητη επικύρωση τιμών από εμένα."

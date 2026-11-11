@@ -1,0 +1,21 @@
+# Παράδειγμα Β: παλιό πάρκο 500 kW με σταθερή τιμή (FiT), Αρκαδία, σε λειτουργία από το 2012.
+# Ενδεικτικά στοιχεία. Η ταρίφα είναι τάξη μεγέθους μετά το New Deal του 2014, όχι από σύμβαση.
+park:
+  name: "Πάρκο Β: 500 kW FiT, Τρίπολη"
+  lat: 37.51
+  lon: 22.37
+  pv_dc_kwp: 500
+  pv_ac_kw: 500
+  grid_export_limit_kw: 500
+  tilt_deg: 28
+  azimuth_deg: 0
+  tracking: fixed
+  commissioning_year: 2012
+  commissioning_date: "2012-09-01"
+  grid_operator: deddie
+  voltage_level: mv
+  static_injection_cap_frac: 1.0
+  support: {kind: fit, price_eur_mwh: 215.0, end_year: 2032}
+base_year: 2026
+cod_year: 2027
+life_years: 15

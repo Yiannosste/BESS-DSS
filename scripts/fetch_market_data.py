@@ -6,14 +6,17 @@ Usage
     python scripts/fetch_market_data.py                 # everything
     python scripts/fetch_market_data.py dam system      # selected datasets
     python scripts/fetch_market_data.py --no-crosscheck # skip the HEnEx download (about 350 MB)
-    python scripts/fetch_market_data.py --keep-raw      # keep raw ADMIE/HEnEx workbooks (about 1.5 GB)
+    python scripts/fetch_market_data.py --keep-raw      # keep raw ADMIE/HEnEx workbooks (about 1 GB)
 
 The run is idempotent: closed periods are served from ``data/raw`` caches and
 only new or republished files are downloaded.  A first complete run downloads
-roughly 1.5 GB (mostly ADMIE ISP workbooks and HEnEx yearly archives) and takes
-45 to 60 minutes because requests are rate limited on purpose.  Raw workbooks
-are deleted after parsing unless ``--keep-raw`` is given; compact parsed caches
-stay in ``data/raw/admie/_parsed`` and ``data/raw/henex``.
+roughly 1 GB (about 4550 ADMIE workbooks and six HEnEx yearly archives) and
+takes 35 to 45 minutes because requests are rate limited on purpose.  Raw
+workbooks are deleted after parsing unless ``--keep-raw`` is given; compact
+parsed caches (about 45 MB) stay in ``data/raw``.
+
+Licence warning: the day-ahead price files are for private and internal use
+only and must not be redistributed (see registers/data_provenance_market.yaml).
 
 Extra packages on top of the project dependencies: ``openpyxl`` (xlsx) and
 ``xlrd`` (legacy xls files of ADMIE and EEX).

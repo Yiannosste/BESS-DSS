@@ -83,15 +83,15 @@ def irr(cashflows: np.ndarray, lo: float = -0.99, hi: float = 1.0, iters: int = 
 
 @dataclass
 class FinanceResult:
-    capex_nominal: float
+    capex_nominal: np.ndarray  # (n_paths,) net of subsidy
     npv: np.ndarray  # (n_paths,) project NPV, nominal discounting, EUR of year 0
     irr_project: np.ndarray
     irr_equity: np.ndarray
     payback_years: np.ndarray  # simple payback on unlevered after-tax cash flow, NaN if never
     dscr: np.ndarray  # (n_paths, tenor) incremental DSCR per debt year
     dscr_min: np.ndarray
-    debt_amount: float
-    debt_service: np.ndarray  # (tenor,)
+    debt_amount: np.ndarray  # (n_paths,)
+    debt_service: np.ndarray  # (n_paths, tenor)
     fcf_unlevered: np.ndarray  # (n_paths, N+1) nominal
     cfads: np.ndarray  # (n_paths, N)
     ebitda: np.ndarray  # (n_paths, N) nominal
@@ -105,12 +105,17 @@ def evaluate(
     incremental_revenue_real: np.ndarray,
     discharged_mwh: np.ndarray | None = None,
     extra_opex_real: np.ndarray | None = None,
+    capex_multiplier: np.ndarray | float = 1.0,
+    extra_capex_eur: float = 0.0,
 ) -> FinanceResult:
     """Cash-flow waterfall for one battery size over many scenario paths.
 
     incremental_revenue_real: (n_paths, N) revenue of PV+battery minus PV alone, base-year euros,
-        before aggregator fee. Must already contain grid-charging costs and auxiliary consumption.
+        before aggregator fee. Must already contain grid-charging costs.
     discharged_mwh: (n_paths, N) energy discharged per year (for LCOS). Optional.
+    extra_opex_real: (n_paths, N) or (N,) further operating cost in base-year euros (e.g. auxiliary energy).
+    capex_multiplier: scalar or (n_paths,) uncertainty factor on the installed cost.
+    extra_capex_eur: one-off cost not proportional to size (e.g. guarantee letter fees, meters).
     """
     rev_real = np.atleast_2d(np.asarray(incremental_revenue_real, float))
     n_paths, N = rev_real.shape
@@ -118,55 +123,48 @@ def evaluate(
         raise ValueError(f"revenue has {N} years but life_years={p.life_years}")
     years = np.arange(1, N + 1)
     infl = (1.0 + p.inflation) ** years
-    capex0 = capex_base(p, power_mw, energy_mwh)
+    mult = np.broadcast_to(np.asarray(capex_multiplier, float), (n_paths,)).copy()
+    capex0 = (capex_base(p, power_mw, energy_mwh) + extra_capex_eur) * mult  # (n_paths,)
     capex_net = capex0 * (1.0 - p.capex_subsidy_frac)
 
     revenue = rev_real * infl
-    opex_real = capex0 * (p.opex_fixed_frac_of_capex + p.insurance_frac_of_capex)
-    opex = np.broadcast_to(opex_real * infl, (n_paths, N)).copy()
-    opex += p.aggregator_fee_frac_of_incremental_revenue * np.maximum(revenue, 0.0)
+    opex = capex0[:, None] * (p.opex_fixed_frac_of_capex + p.insurance_frac_of_capex) * infl[None, :]
+    opex = opex + p.aggregator_fee_frac_of_incremental_revenue * np.maximum(revenue, 0.0)
     if extra_opex_real is not None:
-        opex += np.atleast_2d(extra_opex_real) * infl
+        opex = opex + np.atleast_2d(extra_opex_real) * infl
     ebitda = revenue - opex
 
     # augmentation capex (nominal), depreciated straight-line from the following year
-    aug = np.zeros(N)
+    aug = np.zeros((n_paths, N))
     for yr, frac in p.augmentation:
         if 1 <= yr <= N:
             real_cost = (
-                frac
-                * energy_mwh
-                * 1000.0
-                * p.capex_energy_eur_per_kwh
-                * p.augmentation_cost_share_of_energy_capex
+                frac * energy_mwh * 1000.0 * p.capex_energy_eur_per_kwh * p.augmentation_cost_share_of_energy_capex
                 * (1.0 - p.battery_cost_decline_per_year) ** yr
             )
-            aug[yr - 1] += real_cost * (1.0 + p.inflation) ** yr
+            aug[:, yr - 1] += real_cost * (1.0 + p.inflation) ** yr * mult
 
-    dep = np.zeros(N)
-    dep[: min(p.depreciation_years, N)] += capex_net / p.depreciation_years
+    dep = np.zeros((n_paths, N))
+    nd = min(p.depreciation_years, N)
+    dep[:, :nd] += capex_net[:, None] / p.depreciation_years
     for yr, _ in p.augmentation:
-        if 1 <= yr <= N and aug[yr - 1] > 0:
+        if 1 <= yr <= N and aug[:, yr - 1].any():
             n_left = max(1, min(p.depreciation_years, N - yr))
-            dep[yr : yr + n_left] += aug[yr - 1] / n_left
+            dep[:, yr : yr + n_left] += aug[:, yr - 1 : yr] / n_left
 
     # debt: annuity on a share of net capex
-    debt = p.gearing * capex_net
+    debt = p.gearing * capex_net  # (n_paths,)
     tenor = min(p.debt_tenor_years, N)
-    if debt > 0 and tenor > 0:
+    interest = np.zeros((n_paths, N))
+    principal = np.zeros((n_paths, N))
+    if p.gearing > 0 and tenor > 0:
         ann = debt * p.debt_rate / (1.0 - (1.0 + p.debt_rate) ** (-tenor))
-        bal = debt
-        interest = np.zeros(N)
-        principal = np.zeros(N)
+        bal = debt.copy()
         for k in range(tenor):
-            interest[k] = bal * p.debt_rate
-            principal[k] = ann - interest[k]
-            bal -= principal[k]
-        debt_service = interest + principal
-    else:
-        interest = np.zeros(N)
-        principal = np.zeros(N)
-        debt_service = np.zeros(N)
+            interest[:, k] = bal * p.debt_rate
+            principal[:, k] = ann - interest[:, k]
+            bal = bal - principal[:, k]
+    debt_service = interest + principal
 
     def tax_on(taxable):
         if p.tax_shield_usable:
@@ -189,10 +187,10 @@ def evaluate(
         return tax
 
     tax_unlev = tax_on(ebitda - dep)
-    end_flow = np.zeros(N)
-    end_flow[-1] = (p.residual_value_frac_of_capex - p.decommissioning_frac_of_capex) * capex0 * infl[-1]
+    end_flow = np.zeros((n_paths, N))
+    end_flow[:, -1] = (p.residual_value_frac_of_capex - p.decommissioning_frac_of_capex) * capex0 * infl[-1]
     fcf_ops = ebitda - tax_unlev - aug + end_flow
-    fcf = np.concatenate([np.full((n_paths, 1), -capex_net), fcf_ops], axis=1)
+    fcf = np.concatenate([-capex_net[:, None], fcf_ops], axis=1)
 
     t = np.arange(N + 1)
     disc = (1.0 + p.discount_rate_nominal) ** t
@@ -201,24 +199,23 @@ def evaluate(
 
     tax_lev = tax_on(ebitda - dep - interest)
     cfads = ebitda - tax_lev - aug
-    eq = np.concatenate(
-        [np.full((n_paths, 1), -(capex_net - debt)), cfads - debt_service + end_flow], axis=1
-    )
+    eq = np.concatenate([-(capex_net - debt)[:, None], cfads - debt_service + end_flow], axis=1)
     irr_e = irr(eq)
-    if tenor > 0 and debt > 0:
-        dscr = cfads[:, :tenor] / debt_service[:tenor]
+    if tenor > 0 and p.gearing > 0:
+        dscr = cfads[:, :tenor] / debt_service[:, :tenor]
+        dscr_min = dscr.min(axis=1)
     else:
         dscr = np.full((n_paths, max(tenor, 1)), np.nan)
+        dscr_min = np.full(n_paths, np.nan)
     cum = np.cumsum(fcf, axis=1)
     pos = cum >= 0
     first = np.where(pos.any(axis=1), pos.argmax(axis=1).astype(float), np.nan)
-    # linear interpolation inside the payback year
     payback = first.copy()
-    for i in range(n_paths):
-        if not np.isnan(first[i]) and first[i] >= 1:
-            k = int(first[i])
-            prev, cur = cum[i, k - 1], cum[i, k]
-            payback[i] = (k - 1) + (-prev) / (cur - prev) if cur != prev else k
+    ok = ~np.isnan(first) & (first >= 1)
+    k = first[ok].astype(int)
+    rows = np.where(ok)[0]
+    prev, cur = cum[rows, k - 1], cum[rows, k]
+    payback[ok] = (k - 1) + np.divide(-prev, cur - prev, out=np.ones_like(prev), where=(cur - prev) != 0)
 
     if discharged_mwh is not None:
         dis = np.atleast_2d(np.asarray(discharged_mwh, float))
@@ -235,9 +232,9 @@ def evaluate(
         irr_equity=irr_e,
         payback_years=payback,
         dscr=dscr,
-        dscr_min=np.nanmin(dscr, axis=1),
+        dscr_min=dscr_min,
         debt_amount=debt,
-        debt_service=debt_service[:tenor],
+        debt_service=debt_service[:, :tenor],
         fcf_unlevered=fcf,
         cfads=cfads,
         ebitda=ebitda,

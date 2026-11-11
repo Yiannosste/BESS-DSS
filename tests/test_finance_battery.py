@@ -67,7 +67,7 @@ def test_dscr_definition():
     p = _simple_params(gearing=0.5, debt_tenor_years=5, debt_rate=0.06)
     res = evaluate(p, 1.0, 1.0, np.full((1, 10), 20_000.0))
     ann = 50_000 * 0.06 / (1 - 1.06**-5)
-    assert res.debt_service[0] == pytest.approx(ann)
+    assert res.debt_service[0, 0] == pytest.approx(ann)
     assert res.dscr[0, 0] == pytest.approx(20_000 / ann)
     assert res.dscr.shape == (1, 5)
 

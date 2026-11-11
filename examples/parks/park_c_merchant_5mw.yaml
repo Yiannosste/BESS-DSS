@@ -1,0 +1,19 @@
+# Παράδειγμα Γ: νέο πάρκο 5 MW χωρίς ενίσχυση (merchant), Κοζάνη, με ιχνηλάτη ενός άξονα και όριο έγχυσης 73%.
+# Ενδεικτικά στοιχεία.
+park:
+  name: "Πάρκο Γ: 5 MW merchant, Κοζάνη"
+  lat: 40.30
+  lon: 21.79
+  pv_dc_kwp: 5000
+  pv_ac_kw: 4200
+  grid_export_limit_kw: 4200
+  tracking: single_axis
+  commissioning_year: 2024
+  commissioning_date: "2024-06-01"
+  grid_operator: deddie
+  voltage_level: mv
+  static_injection_cap_frac: 0.73
+  support: {kind: merchant}
+base_year: 2026
+cod_year: 2027
+life_years: 15

@@ -100,7 +100,7 @@ def test_dam_plausible_range(dam: pd.DataFrame) -> None:
     assert price.min() >= -500.0  # harmonised minimum clearing price of SDAC
     assert price.max() <= 4000.0
     assert price.min() == pytest.approx(-50.0)  # documented observed minimum
-    assert price.max() == pytest.approx(942.0)  # documented observed maximum (2022)
+    assert price.max() == pytest.approx(942.0)  # documented observed maximum (2024-09-04)
     yearly = (price * dam["resolution_min"]).groupby(dam.index.year).sum() / dam["resolution_min"].groupby(dam.index.year).sum()
     assert 40.0 < yearly[2016] < 46.0
     assert 270.0 < yearly[2022] < 290.0
@@ -202,7 +202,7 @@ def test_system_plausible_ranges(system: pd.DataFrame) -> None:
     assert system["net_import_phys_total_mw"].abs().max() < 4000.0
     # PV must be (almost) zero at night: 23:00 UTC is 01:00 or 02:00 in Greece
     night = system.loc[system.index.hour == 23, "pv_mw"].dropna()
-    assert night.quantile(0.999) <= 5.0
+    assert night.median() == 0.0 and night.quantile(0.99) <= 5.0
 
 
 def test_system_pv_growth(system: pd.DataFrame) -> None:
@@ -269,6 +269,20 @@ def test_curtailment() -> None:
     energy = cur * df.loc[cur.index, "resolution_min"] / 60.0
     day_share = energy[(energy.index.hour >= 6) & (energy.index.hour < 16)].sum() / energy.sum()
     assert day_share > 0.8
+    # documented: the ISP files carry the "Energy Surplus" row from dispatch day 2024-01-19 (CET)
+    assert cur.index.min() == pd.Timestamp("2024-01-18 23:00", tz="UTC")
+    assert df.loc[: "2024-01-18 22:59", "curtail_sched_mw"].isna().all()  # unknown, not zero
+    # documented annual totals of closed years (GWh): 2024 about 899, 2025 about 1867
+    gwh = energy.groupby(energy.index.year).sum() / 1000.0
+    assert gwh[2024] == pytest.approx(898.7, abs=1.0)
+    assert gwh[2025] == pytest.approx(1866.9, abs=1.0)
+    # documented gaps: 8 missing ISP1 dispatch days show up as one-day holes in the time axis
+    step = df.index.to_series().diff().dt.total_seconds().div(60.0).iloc[1:]
+    expected = df["resolution_min"].shift(1).iloc[1:].astype(float)
+    assert int((step.to_numpy() != expected.to_numpy()).sum()) == 8
+    switch = pd.Timestamp("2025-09-30 22:00", tz="UTC")
+    assert (df.loc[df.index < switch, "resolution_min"] == 30).all()
+    assert (df.loc[df.index >= switch, "resolution_min"] == 15).all()
 
 
 def test_res_forecast() -> None:
@@ -297,7 +311,7 @@ def test_installed_capacity() -> None:
     assert not df.duplicated(["date", "technology", "source"]).any()
     irena_pv = df[(df["technology"] == "pv") & df["source"].str.startswith("IRENA")].set_index("date")["value"].sort_index()
     assert irena_pv.index.min().year <= 2015 and irena_pv.index.max().year >= 2024
-    assert irena_pv.loc["2015":].is_monotonic_increasing
+    assert irena_pv.loc["2018":].is_monotonic_increasing  # IRENA shows a small dip in 2017 (2604 to 2552 MW)
     assert 2400.0 < irena_pv.loc["2015-12-31"] < 2800.0
     ec = df[df["source"].str.startswith("energy-charts")]
     assert {"pv", "wind", "gas", "lignite", "hydro_reservoir", "hydro_pumped"} <= set(ec["technology"])
@@ -308,7 +322,7 @@ def test_fuel_prices() -> None:
     df = loaders.load_fuel_prices()
     _assert_utc_index(df)
     assert df.index.min() == pd.Timestamp("2015-01-01", tz="UTC")
-    months = df.index.to_period("M")
+    months = df.index.tz_localize(None).to_period("M")
     assert (np.diff(months.astype("int64")) == 1).all()  # contiguous months
     ttf = df["ttf_eur_mwh"].dropna()
     assert ttf.index.max() >= pd.Timestamp("2026-09-01", tz="UTC")

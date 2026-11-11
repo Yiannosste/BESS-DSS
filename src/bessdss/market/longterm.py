@@ -190,8 +190,10 @@ class MarketYear:
 
 
 class MarketSimulator:
-    def __init__(self, cal: MarketCalibration):
+    def __init__(self, cal: MarketCalibration, fleet_arbitrage_share: float = 1.0):
         self.cal = cal
+        # share of the national battery fleet that does day-ahead energy shifting (the rest is held for reserves)
+        self.fleet_arbitrage_share = fleet_arbitrage_share
         zg = cal.surface.z_grid
         self._mean_curve = cal.surface.mean_curve()
         self._fleet_cache: dict = {}
@@ -215,30 +217,45 @@ class MarketSimulator:
         return z, pv_cf, wx.index[:n].month.to_numpy()
 
     def _units(self, d: YearDrivers, bess_gw: float | None = None) -> list[StorageUnit]:
-        b = d.bess_gw if bess_gw is None else bess_gw
+        b = (d.bess_gw if bess_gw is None else bess_gw) * self.fleet_arbitrage_share
         return [
             StorageUnit("bess", max(b, 1e-6), max(b, 1e-6) * d.bess_duration_h, 0.93, 0.93),
             StorageUnit("pumped", max(d.pumped_gw, 1e-6), max(d.pumped_gw, 1e-6) * d.pumped_duration_h, 0.87, 0.87),
         ]
 
-    def dispatch_fleet(self, z: np.ndarray, M_h: np.ndarray, d: YearDrivers, bess_gw: float | None = None) -> np.ndarray:
+    def segment_prices(self, u: np.ndarray, M_h: np.ndarray) -> np.ndarray:
+        """Price of every curve segment for every hour, given the hour's rank: (T, K) EUR/MWh.
+
+        The fleet must see the price pattern that real batteries see, including the systematic
+        hour-of-day pattern carried by the ranks (evening ramp, night). If it only saw the average
+        curve, that pattern would survive any amount of storage and the entry equilibrium would
+        never bite (this was a bug in the first version, see difficulties register).
+        """
+        sf = self.cal.surface
+        q_mid = 0.5 * (sf.q[1:] + sf.q[:-1])  # (K, nu)
+        uu = np.clip(u, sf.u_grid[0], sf.u_grid[-1])
+        iu = np.clip(np.searchsorted(sf.u_grid, uu) - 1, 0, len(sf.u_grid) - 2)
+        tu = (uu - sf.u_grid[iu]) / (sf.u_grid[iu + 1] - sf.u_grid[iu])
+        seg = q_mid[:, iu] * (1 - tu) + q_mid[:, iu + 1] * tu  # (K, T)
+        return np.maximum.accumulate(seg, axis=0).T * M_h[:, None]
+
+    def dispatch_fleet(
+        self, z: np.ndarray, seg_prices: np.ndarray, d: YearDrivers, bess_gw: float | None = None
+    ) -> np.ndarray:
         """Net residual load after the storage fleet (GW), day by day with SoC carried over."""
         zg = self.cal.surface.z_grid + d.saturation_shift_gw
         key = (len(zg), round(float(zg[0]), 6))
         if key not in self._fleet_cache:
             self._fleet_cache[key] = FleetDispatch(24, 1.0, zg, 2)
         fd = self._fleet_cache[key]
-        fd.b = zg
         units = self._units(d, bess_gw)
         out = np.empty_like(z)
         soc = np.zeros(2)
         for k in range(365):
             sl = slice(24 * k, 24 * k + 24)
             zz = np.clip(z[sl], zg[0] + 1e-6, None)
-            seg = M_h[sl][:, None] * self._seg_price_norm[None, :]
-            r = fd.solve(zz, seg, units, soc)
-            net = r["net_load_gw"] - r["curtail_gw"] + (z[sl] - zz)
-            out[sl] = net
+            r = fd.solve(zz, seg_prices[sl], units, soc)
+            out[sl] = r["net_load_gw"] - r["curtail_gw"] + (z[sl] - zz)
             soc = r["soc_gwh"][:, -1]
         return out
 
@@ -275,12 +292,12 @@ class MarketSimulator:
         z, pv_cf, month_h = self.residual_load(d, weather_year)
         M12 = self.level(d)
         M_h = M12[month_h - 1]
-        z_after = self.dispatch_fleet(z, M_h, d, bess_gw)
         month_d = month_h.reshape(365, 24)[:, 12]
         dow = (np.arange(365) + pd.Timestamp(f"{d.year}-01-01").dayofweek) % 7
         u = self.sample_ranks(month_d, dow >= 5, rng).reshape(-1)
         if d.spread_scale != 1.0:
             u = np.clip(0.5 + (u - 0.5) * d.spread_scale, 1e-3, 1 - 1e-3)
+        z_after = self.dispatch_fleet(z, self.segment_prices(u, M_h), d, bess_gw)
         z_eff = z_after - d.saturation_shift_gw
         price_h = M_h * self.cal.surface.price(z_eff, u)
         zero = price_h <= self.cal.zero_price_eps
