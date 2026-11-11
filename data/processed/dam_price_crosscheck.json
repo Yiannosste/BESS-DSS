@@ -1,0 +1,68 @@
+{
+  "generated_utc": "2026-11-10T23:41:36.806042+00:00",
+  "tolerance_eur_mwh": 0.011,
+  "henex_period": [
+    "2020-10-31 23:00:00+00:00",
+    "2026-11-11 22:45:00+00:00"
+  ],
+  "intervals_compared": 62259,
+  "delivery_days_compared": 1994,
+  "missing_in_energy_charts": 0,
+  "mismatch_intervals": 0,
+  "mismatch_days": [],
+  "missing_days": [],
+  "per_year": {
+    "2020": {
+      "henex_intervals": 1465,
+      "days_compared": 62,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.0
+    },
+    "2021": {
+      "henex_intervals": 8736,
+      "days_compared": 365,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.0
+    },
+    "2022": {
+      "henex_intervals": 8760,
+      "days_compared": 366,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.0
+    },
+    "2023": {
+      "henex_intervals": 8760,
+      "days_compared": 366,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.010000000000005116
+    },
+    "2024": {
+      "henex_intervals": 8784,
+      "days_compared": 367,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.0
+    },
+    "2025": {
+      "henex_intervals": 15390,
+      "days_compared": 366,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.0
+    },
+    "2026": {
+      "henex_intervals": 10364,
+      "days_compared": 108,
+      "missing_in_energy_charts": 0,
+      "mismatch_intervals": 0,
+      "max_abs_diff_eur_mwh": 0.0
+    }
+  },
+  "worst_mismatches": [],
+  "first_15min_ts_energy_charts": "2025-09-30 22:00:00+00:00",
+  "first_15min_ts_henex": "2025-09-30 22:00:00+00:00"
+}

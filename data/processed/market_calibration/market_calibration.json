@@ -1,0 +1,14 @@
+{
+ "level_intercept": 6.193774367772901,
+ "level_slope": 1.1313429252256146,
+ "curt_a_gw": 0.955343729549822,
+ "curt_b": 0.3911118203718894,
+ "zero_price_eps": 0.5,
+ "meta": {
+  "window_start": "2025-01-01",
+  "built_on": "2026-11-10",
+  "k_ref": 0.00021006284103144697,
+  "pv_capacity_source": "IRENA",
+  "note": "prices in nominal EUR of the calibration window"
+ }
+}

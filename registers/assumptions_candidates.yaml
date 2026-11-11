@@ -1,0 +1,1125 @@
+# Υποψήφιες παραδοχές για το BESS-DSS (έρευνα 2026-11-10).
+# Κανόνες: κάθε τιμή έχει πηγή και ημερομηνία. confidence: sourced | derived | expert_guess.
+# null = δεν βρέθηκε τιμή για το συγκεκριμένο άκρο. Τα expert_guess ΔΕΝ έχουν πηγή και θέλουν επιβεβαίωση.
+# Μετατροπή USD σε EUR: βλ. CAND-041 (παράγωγη ισοτιμία).
+
+# ===========================================================================
+# FINANCE: CAPEX
+# ===========================================================================
+- id: CAND-001
+  domain: finance
+  name: bess_turnkey_system_price_bnef_2025
+  description: "Τιμή turnkey συστήματος BESS (εξοπλισμός, χωρίς EPC και σύνδεση) κατά BNEF 2025: παγκόσμιος μέσος, Ευρώπη, ΗΠΑ"
+  unit: "USD/kWh"
+  low: 117
+  central: 177
+  high: 219
+  as_of: "2025-12"
+  source: "BloombergNEF, Energy Storage Systems Cost Survey 2025, όπως αναφέρεται στο Energy-Storage.news, 'Battery storage system prices continue to fall sharply, BNEF and Ember reports find' (Δεκ. 2025)"
+  url: "https://www.energy-storage.news/battery-storage-system-prices-continue-to-fall-sharply-bnef-and-ember-reports-find/"
+  confidence: sourced
+  notes: "low = παγκόσμιος μέσος 117, central = Ευρώπη 177, high = ΗΠΑ 219. Κίνα 73 USD/kWh. Δευτερογενής πηγή (απόσπασμα αναζήτησης, το άρθρο έδωσε 403 στο fetch). Η βάση διάρκειας (ώρες) δεν δηλώνεται. Η έρευνα 2026 του BNEF δεν είχε δημοσιευθεί ή δεν βρέθηκε."
+
+- id: CAND-002
+  domain: finance
+  name: stationary_storage_pack_price_bnef_2025
+  description: "Τιμή πακέτου μπαταρίας (pack) για σταθερή αποθήκευση, BNEF battery price survey 2025"
+  unit: "USD/kWh"
+  low: 50
+  central: 70
+  high: 81
+  as_of: "2025-12"
+  source: "BloombergNEF Lithium-Ion Battery Price Survey 2025 (9 Δεκ. 2025), όπως αναφέρεται σε pv magazine India και Energy-Storage.news"
+  url: "https://www.pv-magazine-india.com/2025/12/10/global-lithium-ion-battery-pack-prices-fall-to-108-kwh-says-bnef"
+  confidence: sourced
+  notes: "central = μέση τιμή pack σταθερής αποθήκευσης 70 (μείον 45% από 2024). low = χαμηλότερη παρατηρηθείσα τιμή LFP pack 50 (κυψέλη 36). high = μέσος όρος LFP pack όλων των τομέων 81. Παγκόσμιος μέσος όλων των pack 108. Δευτερογενής πηγή."
+
+- id: CAND-003
+  domain: finance
+  name: bess_allin_capex_utility_4h_ember_2025
+  description: "Συνολικό CAPEX έργου BESS 4 ωρών και άνω (εξοπλισμός + EPC + σύνδεση), εκτός Κίνας και ΗΠΑ"
+  unit: "USD/kWh"
+  low: 105
+  central: 125
+  high: 175
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (11 Δεκ. 2025, δεδομένα Οκτ. 2025)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "central 125 είναι η τιμή της πηγής. low και high είναι παράγωγα: εξοπλισμός 75 + εγκατάσταση/σύνδεση 30 έως 100. Αφορά μεγάλα έργα (εκατοντάδες MWh), όχι 1 έως 5 MWh."
+
+- id: CAND-004
+  domain: finance
+  name: bess_core_equipment_cost_ember_2025
+  description: "Κόστος βασικού εξοπλισμού BESS παραδοτέου από Κίνα (containers περίπου 90%, PCS και EMS περίπου 10%)"
+  unit: "USD/kWh"
+  low: null
+  central: 75
+  high: 100
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (11 Δεκ. 2025)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "Η πηγή λέει ότι το κόστος μπορεί να ξεπεράσει τα 100 USD/kWh σε αγορές με δασμούς, αυστηρότερα πρότυπα ή τοπικό περιεχόμενο. Κάτω άκρο δεν δίνεται."
+
+- id: CAND-005
+  domain: finance
+  name: bess_installation_and_grid_connection_cost_ember_2025
+  description: "Κόστος εγκατάστασης (EPC) και σύνδεσης στο δίκτυο ανά kWh"
+  unit: "USD/kWh"
+  low: 30
+  central: 50
+  high: 100
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (11 Δεκ. 2025)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "Το εύρος εξαρτάται κυρίως από το κόστος σύνδεσης. Σε retrofit πίσω από υφιστάμενο σημείο σύνδεσης το κόστος σύνδεσης αναμένεται χαμηλό, αλλά αυτό δεν τεκμηριώθηκε με πηγή."
+
+- id: CAND-006
+  domain: finance
+  name: bess_pcs_ems_cost_per_kw_derived
+  description: "Κόστος PCS και EMS ανά kW, παράγωγο από το μερίδιο 10% του εξοπλισμού κατά Ember"
+  unit: "USD/kW"
+  low: null
+  central: 30
+  high: null
+  as_of: "2025-10"
+  source: "Παράγωγο από Ember, 'How cheap is battery storage?' (10% x 75 USD/kWh x 4 h)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: derived
+  notes: "Υπολογισμός: 0.10 x 75 USD/kWh = 7.5 USD/kWh, επί 4 ώρες = 30 USD/kW. Αφορά μεγάλα έργα με κινεζικό εξοπλισμό. ΔΕΝ περιλαμβάνει μετασχηματιστή ΜΤ και πίνακες. Δεν βρέθηκε άμεση πηγή EUR/kW για PCS και Μ/Σ ΜΤ σε μικρά συστήματα."
+
+- id: CAND-007
+  domain: finance
+  name: lfp_cell_price_china_2025
+  description: "Τιμή κυψέλης LFP στην εγχώρια αγορά της Κίνας"
+  unit: "USD/kWh"
+  low: 36
+  central: 40
+  high: null
+  as_of: "2025-11"
+  source: "Ember, 'How cheap is battery storage?' (central). BNEF battery price survey 2025 (low, χαμηλότερη παρατηρηθείσα τιμή κυψέλης LFP)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: ""
+
+- id: CAND-008
+  domain: finance
+  name: bess_recent_tender_implied_capex_2025
+  description: "Τεκμαρτό CAPEX από πρόσφατους διαγωνισμούς και συμβάσεις (Ιταλία MACSE, Σαουδική Αραβία)"
+  unit: "USD/kWh"
+  low: 120
+  central: 120
+  high: 123
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (11 Δεκ. 2025)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "MACSE (Οκτ. 2025): εκκαθάριση 13 EUR/kWh ανά έτος, τεκμαρτό CAPEX περίπου 120 (70 εξοπλισμός + 50 EPC). Σαουδική Αραβία (Αύγ. 2025, 2 x 2.45 GWh): εξοπλισμός 73 έως 75, EPC 47 έως 48 USD/kWh."
+
+- id: CAND-009
+  domain: finance
+  name: lazard_utility_bess_low_end_installed_cost_2025
+  description: "Κάτω άκρο εγκατεστημένου κόστους Lazard για 100 MW / 400 MWh"
+  unit: "USD/kWh"
+  low: 155
+  central: null
+  high: null
+  as_of: "2025-06"
+  source: "Lazard LCOE+ (Ιούν. 2025), όπως παρατίθεται στο Ember 'How cheap is battery storage?'"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "Δευτερογενής παράθεση. Το PDF της Lazard έδωσε 404 και δεν ανακτήθηκαν οι αναλυτικές παραδοχές (DC, AC, EPC, O&M, εγγύηση, augmentation)."
+
+- id: CAND-010
+  domain: finance
+  name: lazard_lcos_utility_standalone_4h_2025
+  description: "LCOS Lazard για αυτόνομη μπαταρία 100 MW, 4 ωρών (ΗΠΑ, χωρίς επιδότηση)"
+  unit: "USD/MWh"
+  low: 115
+  central: null
+  high: 254
+  as_of: "2025-06"
+  source: "Lazard LCOE+ 2025, όπως αναφέρεται στο Energy-Storage.news, 'Lazard says US energy storage cost reduction in 2025 offsets prior pandemic-driven increases'"
+  url: "https://www.energy-storage.news/lazard-says-us-energy-storage-cost-reduction-in-2025-offsets-prior-pandemic-driven-increases/"
+  confidence: sourced
+  notes: "Για 2 ώρες: 129 έως 277 USD/MWh. Δευτερογενής πηγή (απόσπασμα αναζήτησης). Ο ορισμός της Lazard περιλαμβάνει κόστος φόρτισης."
+
+- id: CAND-011
+  domain: finance
+  name: greece_business_storage_subsidy_eligible_cost_cap
+  description: "Ανώτατο επιλέξιμο κόστος αγοράς και εγκατάστασης μπαταρίας στο πρόγραμμα 'Αποθήκευση στις επιχειρήσεις' (ΥΠΕΝ)"
+  unit: "EUR/kWh"
+  low: 350
+  central: null
+  high: 400
+  as_of: "2024-12"
+  source: "Balkan Green Energy News, 'Greek government supports businesses to install batteries with subsidies of up to half of investment' (23 Δεκ. 2024, ενημ. 1 Ιούν. 2026)"
+  url: "https://balkangreenenergynews.com/greek-governement-supports-businesses-to-install-batteries-with-subsidies-of-up-to-half-of-investment"
+  confidence: sourced
+  notes: "400.000 EUR/MWh για διάρκεια 1 ώρας, 350.000 EUR/MWh για 1 έως 2 ώρες. Είναι ανώτατο όριο επιλεξιμότητας, όχι τιμή αγοράς. Χρήσιμο ως άνω φράγμα για μικρά συστήματα στην Ελλάδα. Επιπλέον όρια: EMS 40.000 EUR ανά αίτηση, σύνδεση έως 5.000 EUR ανά μπαταρία."
+
+- id: CAND-012
+  domain: finance
+  name: ci_bess_installed_cost_europe_1mwh_2026
+  description: "Συνολικό εγκατεστημένο κόστος εμπορικού και βιομηχανικού BESS 1 MWh στην Ευρώπη (οδηγός προμηθευτή)"
+  unit: "EUR/kWh"
+  low: 330
+  central: null
+  high: 530
+  as_of: "2026-06"
+  source: "PVB, 'How Much Does a C&I BESS Really Cost in 2026? Europe Total Installed Cost Guide for CFOs' (ενημ. Ιούν. 2026)"
+  url: "https://www.pvb.com/blog/how-much-does-a-ci-bess-really-cost-in-2026-europe-total-installed-cost-guide-for-cfos-updated-march-2026/"
+  confidence: sourced
+  notes: "Πηγή προμηθευτή, χαμηλή αξιοπιστία, από απόσπασμα αναζήτησης. Για 422 kWh: 400 έως 610. Για 5 MWh και άνω: 270 έως 450 EUR/kWh. Περιλαμβάνει δίκτυο, πυροπροστασία, αδειοδότηση."
+
+- id: CAND-013
+  domain: finance
+  name: small_bess_cost_premium_1mwh_vs_5mwh
+  description: "Προσαύξηση κόστους ανά kWh για σύστημα 1 MWh έναντι 5 MWh και άνω"
+  unit: "%"
+  low: 18
+  central: 19
+  high: 22
+  as_of: "2026-06"
+  source: "Παράγωγο από PVB C&I BESS cost guide (βλ. CAND-012)"
+  url: "https://www.pvb.com/blog/how-much-does-a-ci-bess-really-cost-in-2026-europe-total-installed-cost-guide-for-cfos-updated-march-2026/"
+  confidence: derived
+  notes: "Υπολογισμός από τα άκρα και τα μέσα των ευρών: 330/270 = +22%, 430/360 = +19%, 530/450 = +18%. Βασίζεται σε μία μόνο πηγή προμηθευτή."
+
+- id: CAND-014
+  domain: finance
+  name: dss_allin_capex_small_btm_retrofit_greece_2h
+  description: "Τιμή εργασίας DSS: συνολικό CAPEX AC-coupled μπαταρίας 1 έως 5 MWh, 2 ωρών, σε υφιστάμενο Φ/Β πάρκο στην Ελλάδα"
+  unit: "EUR/kWh"
+  low: 180
+  central: 250
+  high: 350
+  as_of: "2026-11"
+  source: "Εκτίμηση του ερευνητή με γέφυρα μεταξύ CAND-001, CAND-005, CAND-011, CAND-012. ΔΕΝ υπάρχει άμεση πηγή."
+  url: ""
+  confidence: expert_guess
+  notes: "EXPERT GUESS. low: Ευρώπη turnkey 177 USD/kWh (περίπου 153 EUR) συν ελάχιστη εγκατάσταση 30 USD/kWh. high: ανώτατο επιλέξιμο κόστος ελληνικού προγράμματος για 1 έως 2 ώρες (350 EUR/kWh). Δεν βρέθηκαν δημοσιευμένες ελληνικές προσφορές EPC ανά kWh. Χρειάζεται επιβεβαίωση με πραγματικές προσφορές."
+
+- id: CAND-015
+  domain: finance
+  name: nrel_atb_2025_capex_reduction_2023_to_2035
+  description: "Προβολή μείωσης overnight CAPEX μπαταρίας 4 ωρών 2023 έως 2035 (συντηρητικό, μέτριο, προχωρημένο σενάριο)"
+  unit: "%"
+  low: 22
+  central: 45
+  high: 66
+  as_of: "2025-07"
+  source: "NREL (NLR) Annual Technology Baseline 2025, Utility-Scale Battery Storage"
+  url: "https://atb.nlr.gov/electricity/2025/utility-scale_battery_storage"
+  confidence: sourced
+  notes: "Το ATB θεωρεί ότι το κόστος 2023 είναι 30% υψηλότερο από του 2024. Πρόσθετη μείωση 2035 έως 2050: 5%, 26%, 27%. Δολάρια ΗΠΑ, αγορά ΗΠΑ."
+
+- id: CAND-016
+  domain: finance
+  name: bess_capex_reduction_2024_to_2035_derived
+  description: "Παράγωγη μείωση CAPEX από το 2024 έως το 2035 (για κόστος αντικατάστασης και augmentation)"
+  unit: "%"
+  low: -1
+  central: 28
+  high: 56
+  as_of: "2025-07"
+  source: "Παράγωγο από NREL ATB 2025 (βλ. CAND-015)"
+  url: "https://atb.nlr.gov/electricity/2025/utility-scale_battery_storage"
+  confidence: derived
+  notes: "Υπολογισμός: κόστος2035/κόστος2024 = 1.30 x (1 - r). Συντηρητικό 1.30 x 0.78 = 1.014 (αύξηση 1%), μέτριο 1.30 x 0.55 = 0.715, προχωρημένο 1.30 x 0.34 = 0.442."
+
+- id: CAND-017
+  domain: finance
+  name: bnef_4h_system_price_china_2035_forecast
+  description: "Πρόβλεψη BNEF για τιμή συστήματος 4 ωρών στην Κίνα το 2035"
+  unit: "USD/kWh"
+  low: null
+  central: 41
+  high: null
+  as_of: "2025-12"
+  source: "Απόσπασμα αναζήτησης που αποδίδει την τιμή σε BNEF. Η αρχική δημοσίευση δεν εντοπίστηκε."
+  url: "https://www.energy-storage.news/tag/bloombergnef"
+  confidence: sourced
+  notes: "ΧΑΜΗΛΗ ΒΕΒΑΙΟΤΗΤΑ: το απόσπασμα ήταν κομμένο και δεν επαληθεύτηκε το πλαίσιο. Να μη χρησιμοποιηθεί χωρίς επιβεβαίωση."
+
+# ===========================================================================
+# FINANCE: OPEX
+# ===========================================================================
+- id: CAND-018
+  domain: finance
+  name: bess_om_pct_of_capex_ember
+  description: "Ετήσιο O&M ως ποσοστό του CAPEX (χωρίς augmentation)"
+  unit: "% CAPEX/έτος"
+  low: null
+  central: 2
+  high: null
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (παραδοχές LCOS)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "Αντιστοιχεί σε περίπου 2.5 USD/kWh ανά έτος για CAPEX 125 USD/kWh."
+
+- id: CAND-019
+  domain: finance
+  name: bess_fixed_om_pct_of_capex_nrel_atb_2025
+  description: "Σταθερό O&M ως ποσοστό του CAPEX (USD/kW), περιλαμβάνει augmentation ώστε να κρατιέται η ονομαστική χωρητικότητα"
+  unit: "% CAPEX/έτος"
+  low: null
+  central: 4
+  high: null
+  as_of: "2025-07"
+  source: "NREL (NLR) Annual Technology Baseline 2025, Utility-Scale Battery Storage"
+  url: "https://atb.nlr.gov/electricity/2025/utility-scale_battery_storage"
+  confidence: sourced
+  notes: "Το μεταβλητό O&M θεωρείται μηδέν. Η διαφορά με το 2% του Ember οφείλεται κυρίως στο augmentation."
+
+- id: CAND-020
+  domain: finance
+  name: optimiser_revenue_share
+  description: "Αμοιβή optimiser ή route-to-market ως μερίδιο εσόδων"
+  unit: "% εσόδων"
+  low: 3
+  central: null
+  high: 10
+  as_of: "2025-12"
+  source: "Sympower, 'BESS revenue models' (ισχυρισμός παρόχου, από απόσπασμα αναζήτησης)"
+  url: "https://sympower.net/articles/bess-revenue-models"
+  confidence: sourced
+  notes: "Πηγή παρόχου. Εναλλακτικές δομές: floor (π.χ. 100.000 EUR/MW/έτος) με 50% στον optimiser πάνω από το floor. ΔΕΝ βρέθηκε δημοσιευμένη αμοιβή ελληνικού ΦοΣΕ για μπαταρίες. Το pv magazine (4 Μαρ. 2026) αναφέρει ότι οι aggregators δεν μπορούσαν τότε να εκπροσωπήσουν μπαταρίες στην αγορά."
+
+- id: CAND-021
+  domain: finance
+  name: bess_insurance_pct_of_capex
+  description: "Ετήσιο ασφάλιστρο ως ποσοστό του CAPEX"
+  unit: "% CAPEX/έτος"
+  low: 0.3
+  central: 0.5
+  high: 1.0
+  as_of: "2026-11"
+  source: "Καμία πηγή. Τιμή εργασίας του ερευνητή."
+  url: ""
+  confidence: expert_guess
+  notes: "EXPERT GUESS. Η αναζήτηση δεν βρήκε δημοσιευμένο ποσοστό. Ποιοτικά: τα ασφάλιστρα BESS πέφτουν το 2026 (pv magazine, 21 Απρ. 2026), με μειώσεις 20 έως 30% για λογαριασμούς Tier 1. Χρειάζεται προσφορά μεσίτη."
+
+# ===========================================================================
+# FINANCE: χρηματοδότηση, επιτόκια, φόροι
+# ===========================================================================
+- id: CAND-022
+  domain: finance
+  name: euribor_rates
+  description: "Euribor 3 μηνών (low), 6 μηνών (central), 12 μηνών (high)"
+  unit: "%"
+  low: 2.794
+  central: 3.016
+  high: 3.248
+  as_of: "2026-11"
+  source: "Bank of Finland, Euribor rates (τιμές 6 Νοε. 2026)"
+  url: "https://www.suomenpankki.fi/en/statistics/interest-rates-and-exchange-rates/euribor-rates/"
+  confidence: sourced
+  notes: "Προσοχή: low, central, high εδώ είναι διαφορετικές διάρκειες, όχι εύρος αβεβαιότητας. Το 3μηνο ήταν 2.812% στις 5 Νοε. 2026 (υψηλό από αρχές 2025)."
+
+- id: CAND-023
+  domain: finance
+  name: greece_10y_government_bond_yield
+  description: "Απόδοση 10ετούς ομολόγου Ελληνικού Δημοσίου"
+  unit: "%"
+  low: 3.46
+  central: 4.12
+  high: 4.36
+  as_of: "2026-11"
+  source: "Trading Economics, Greece 10Y government bond yield (10 Νοε. 2026). Χαμηλό 2026 από ered.gr (6 Μαρ. 2026)."
+  url: "https://tradingeconomics.com/greece/government-bond-yield"
+  confidence: sourced
+  notes: "central = 4.12% στις 10 Νοε. 2026. high = 4.36% στις 24 Σεπ. 2026 (υψηλό από Οκτ. 2023). low = 3.46% στις 6 Μαρ. 2026 (spread έναντι Bund 0.62 μονάδες)."
+
+- id: CAND-024
+  domain: finance
+  name: greece_hicp_inflation
+  description: "Πληθωρισμός Ελλάδας (HICP): 2025, πρόβλεψη 2026, τελευταία μηνιαία τιμή"
+  unit: "%"
+  low: 2.9
+  central: 3.5
+  high: 5.1
+  as_of: "2026-10"
+  source: "Bank of Greece (πρόβλεψη 2026: 3.5%, μέσω Proto Thema 12 Οκτ. 2026). Eurostat μέσω To Vima (Σεπ. 2026: 5.1% ετήσια). Bank of Greece inflation monitor (2025: 2.9%)."
+  url: "https://en.protothema.gr/2026/10/12/bank-of-greece-inflation-persists-with-rate-forecast-to-reach-3-5-in-2026/"
+  confidence: sourced
+  notes: "Μέσος όρος 9μήνου 2026: 3.8%. Η flash εκτίμηση Οκτ. 2026 δεν βρέθηκε. Ο μεσοπρόθεσμος στόχος της ΕΚΤ είναι 2% (γνωστό γεγονός, δεν ανακτήθηκε σελίδα σε αυτή τη συνεδρία). Για μακροχρόνιο ορίζοντα DSS προτείνεται 2% με ευαισθησία έως 3.5%."
+
+- id: CAND-025
+  domain: finance
+  name: greece_corporate_income_tax_rate
+  description: "Συντελεστής φόρου εισοδήματος νομικών προσώπων"
+  unit: "%"
+  low: 22
+  central: 22
+  high: 22
+  as_of: "2026-02"
+  source: "PwC Worldwide Tax Summaries, Greece, Taxes on corporate income (αναθεώρηση 16 Φεβ. 2026). Deloitte Greece Highlights 2026."
+  url: "https://taxsummaries.pwc.com/greece/corporate/taxes-on-corporate-income"
+  confidence: sourced
+  notes: "Δεν ισχύει για πιστωτικά ιδρύματα. Μειώθηκε από 24% το 2022."
+
+- id: CAND-026
+  domain: finance
+  name: greece_tax_depreciation_rate_machinery
+  description: "Συντελεστής φορολογικής απόσβεσης για μηχανήματα και εξοπλισμό (εκτός Η/Υ), άρθρο 24 παρ. 4 ν. 4172/2013"
+  unit: "%/έτος"
+  low: 10
+  central: 10
+  high: 20
+  as_of: "2026-11"
+  source: "Ν. 4172/2013, άρθρο 24, κωδικοποιημένο κείμενο στο TaxHeaven"
+  url: "https://www.taxheaven.gr/law/4172/2013/arthro/24"
+  confidence: sourced
+  notes: "Μηχανήματα και εξοπλισμός 10%, λοιπά πάγια 10%, κτίρια και εγκαταστάσεις 4%. Δεν υπάρχει ρητή πρόβλεψη για ΑΠΕ ή μπαταρίες. high = 20%: η παρ. 10 αυξάνει κατά 100% τους συντελεστές για 'πράσινες' επενδύσεις (ενεργειακή απόδοση, μετριασμός κλιματικής αλλαγής). Η υπαγωγή μπαταρίας σε πάρκο στην παρ. 10 ΔΕΝ επιβεβαιώθηκε, θέλει φοροτεχνικό. Η ημερομηνία τελευταίας τροποποίησης δεν αναγράφεται στη σελίδα."
+
+- id: CAND-027
+  domain: finance
+  name: greece_equity_risk_premium_damodaran
+  description: "Συνολικό equity risk premium Ελλάδας (Damodaran) και ασφάλιστρο κινδύνου χώρας"
+  unit: "%"
+  low: 4.23
+  central: 7.08
+  high: null
+  as_of: "2026-01"
+  source: "A. Damodaran, Country Default Spreads and Risk Premiums (ctryprem, ενημ. 5 Ιαν. 2026), μέσω αντιγράφου του πίνακα"
+  url: "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/home.htm"
+  confidence: sourced
+  notes: "Ελλάδα: Moody's Baa3, default spread 1.87%, country risk premium 2.85%, συνολικό ERP 7.08%. low = ERP ώριμης αγοράς 4.23%. Δευτερογενές αντίγραφο, το xlsx δεν ανοίχτηκε. Υπάρχει ενημέρωση Ιουλίου 2026 που δεν βρέθηκε."
+
+- id: CAND-028
+  domain: finance
+  name: greece_cost_of_equity_derived
+  description: "Παράγωγο κόστος ιδίων κεφαλαίων (CAPM) για έργο ΑΠΕ ή αποθήκευσης στην Ελλάδα"
+  unit: "%"
+  low: 9.8
+  central: 11.2
+  high: 12.6
+  as_of: "2026-11"
+  source: "Παράγωγο: απόδοση 10ετούς (CAND-023) + beta x συνολικό ERP (CAND-027)"
+  url: ""
+  confidence: derived
+  notes: "Υπολογισμός: 4.12% + beta x 7.08%, με beta 0.8, 1.0, 1.2. Το beta είναι παραδοχή χωρίς πηγή. Σημείωση: η χρήση ελληνικού ομολόγου ως risk-free μαζί με country risk premium διπλομετρά εν μέρει τον κίνδυνο χώρας. Συμβατό με IRR 11 έως 12% της Aurora για 2ωρη μπαταρία (CAND-030)."
+
+- id: CAND-029
+  domain: finance
+  name: bess_discount_rate_wacc_ember
+  description: "Προεξοφλητικό επιτόκιο (WACC) για BESS: συμβολαιοποιημένα έναντι merchant"
+  unit: "%"
+  low: 7
+  central: 10
+  high: 15
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (παραδοχές LCOS)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "7% για συμβολαιοποιημένα έργα, 10 έως 15% για merchant. Παγκόσμια τιμή, όχι ειδικά για Ελλάδα. Δεν βρέθηκε απόφαση ΡΑΑΕΥ για WACC ΑΠΕ ή αποθήκευσης. Δεν ανακτήθηκαν οι τιμές Ελλάδας από το IRENA 'The cost of financing for renewable power' (2023). Παλαιότερες μελέτες (2016 έως 2017) έδιναν WACC 10.5 έως 13.7% για αιολικά στην Ελλάδα, πιθανώς ξεπερασμένες."
+
+- id: CAND-030
+  domain: finance
+  name: greece_standalone_2h_bess_irr_aurora
+  description: "Εκτιμώμενο IRR αυτόνομης μπαταρίας 2 ωρών στην Ελλάδα (Aurora)"
+  unit: "%"
+  low: 9
+  central: 11.5
+  high: 12
+  as_of: "2026-08"
+  source: "Aurora Energy Research, μέσω ESS News, 'Standalone BESS to offer up to 12% returns in Greece, Aurora forecasts' (11 Αυγ. 2026)"
+  url: "https://www.ess-news.com/2026/08/11/standalone-bess-to-offer-up-to-12-returns-in-greece-aurora-forecasts/"
+  confidence: sourced
+  notes: "11 έως 12% για έναρξη λειτουργίας 2027. Περίπου 2 μονάδες χαμηλότερα για έναρξη 2030 (low = παράγωγο). Η Aurora προειδοποιεί ότι το όφελος μπορεί να είναι προσωρινό. Μέση χονδρεμπορική τιμή περίπου 100 EUR/MWh έως το 2029. Δεν δίνονται παραδοχές CAPEX."
+
+- id: CAND-031
+  domain: finance
+  name: loan_gearing_merchant_bess_greece
+  description: "Ποσοστό δανεισμού (gearing) που δίνουν οι ελληνικές τράπεζες σε merchant μπαταρίες"
+  unit: "%"
+  low: 50
+  central: 55
+  high: 60
+  as_of: "2026-10"
+  source: "PowerGame, 'Μπαταρίες: Ποιο προφίλ επενδυτών περνά το φίλτρο των τραπεζών' (2 Ιουν. 2026). ΟΤ, 'Αποθήκευση ενέργειας: Μπαράζ επενδύσεων σε μπαταρίες' (19 Οκτ. 2026)."
+  url: "https://www.powergame.gr/green-power/1362916/bataries-poio-profil-ependyton-perna-to-filtro-ton-trapezon/"
+  confidence: sourced
+  notes: "central = μέσο του εύρους. Ίδια κεφάλαια 40 έως 50%. Αν ο επενδυτής προσφέρει ως εξασφάλιση σταθερές ταμειακές ροές από υφιστάμενα Φ/Β ή αιολικά με λειτουργική ενίσχυση, μπορεί να διατηρηθεί το παραδοσιακό 80/20 (βλ. CAND-032)."
+
+- id: CAND-032
+  domain: finance
+  name: loan_gearing_contracted_res_greece
+  description: "Παραδοσιακό ποσοστό δανεισμού για έργα ΑΠΕ με εγγυημένο έσοδο στην Ελλάδα"
+  unit: "%"
+  low: null
+  central: 80
+  high: null
+  as_of: "2026-06"
+  source: "PowerGame, 'Μπαταρίες: Ποιο προφίλ επενδυτών περνά το φίλτρο των τραπεζών' (2 Ιουν. 2026)"
+  url: "https://www.powergame.gr/green-power/1362916/bataries-poio-profil-ependyton-perna-to-filtro-ton-trapezon/"
+  confidence: sourced
+  notes: "80% δάνειο, 20% ίδια συμμετοχή. Σχετικό για μπαταρία σε υφιστάμενο πάρκο με FiT ή FiP, όπου οι ροές του πάρκου λειτουργούν ως εξασφάλιση."
+
+- id: CAND-033
+  domain: finance
+  name: dscr_contracted_tolling_bess
+  description: "Ελάχιστο DSCR για το συμβολαιοποιημένο (tolling) τμήμα εσόδων BESS στην Ευρώπη"
+  unit: "x"
+  low: 1.15
+  central: 1.15
+  high: 1.3
+  as_of: "2026-04"
+  source: "pv magazine, 'BBDF 2026: How financing standalone vs. co-located projects really works' (1 Απρ. 2026)"
+  url: "https://www.pv-magazine.com/2026/04/01/bbdf-2026-how-financing-standalone-vs-co-located-projects-really-works/"
+  confidence: sourced
+  notes: "1.15 από το άρθρο (χωρίς απόδοση σε ομιλητή). Το high 1.3 προέρχεται από απόσπασμα αναζήτησης κλαδικού τύπου (1.2 έως 1.3 για tolls) που δεν επαληθεύτηκε σε πλήρες κείμενο. Οι δανειστές θέλουν 50 έως 60% της ισχύος σε tolling για 5 έως 7 έτη. Δεν βρέθηκε δημοσιευμένο DSCR ελληνικής τράπεζας."
+
+- id: CAND-034
+  domain: finance
+  name: dscr_merchant_bess
+  description: "Ελάχιστο DSCR για το merchant τμήμα εσόδων BESS στην Ευρώπη"
+  unit: "x"
+  low: 1.6
+  central: 1.8
+  high: 2.0
+  as_of: "2026-04"
+  source: "pv magazine, 'BBDF 2026: How financing standalone vs. co-located projects really works' (1 Απρ. 2026)"
+  url: "https://www.pv-magazine.com/2026/04/01/bbdf-2026-how-financing-standalone-vs-co-located-projects-really-works/"
+  confidence: sourced
+  notes: "high = περίπου 2.0 από το άρθρο. low = 1.6 από απόσπασμα αναζήτησης κλαδικού τύπου (1.6 έως 1.7 για merchant), μη επαληθευμένο σε πλήρες κείμενο. central = μέσο. Δεν βρέθηκε δημοσιευμένο DSCR ελληνικής τράπεζας ούτε ρητή αναφορά σε P90."
+
+- id: CAND-035
+  domain: finance
+  name: loan_tenor_bess_greece
+  description: "Διάρκεια δανείου για μπαταρία στην Ελλάδα"
+  unit: "έτη"
+  low: 7
+  central: 10
+  high: 12
+  as_of: "2026-11"
+  source: "Καμία άμεση πηγή για διάρκεια. Μόνη ένδειξη: Business Daily, 'Σφίγγουν οι στρόφιγγες της τραπεζικής χρηματοδότησης ενεργειακών έργων' (οι τράπεζες αξιολογούν τα σχέδια σε βάθος δεκαετίας)."
+  url: "https://www.businessdaily.gr/oikonomia/239360_ape-kai-mpataries-sfiggoyn-oi-strofigges-tis-hrimatodotisis-poia-erga-protimoyn-oi"
+  confidence: expert_guess
+  notes: "EXPERT GUESS. Τεκμηριώνεται μόνο ο ορίζοντας αξιολόγησης 10 ετών. Τα άκρα 7 και 12 δεν έχουν πηγή."
+
+- id: CAND-036
+  domain: finance
+  name: loan_margin_over_euribor_bess_greece
+  description: "Περιθώριο δανείου πάνω από Euribor για μπαταρία ή Φ/Β με μπαταρία στην Ελλάδα"
+  unit: "μονάδες βάσης"
+  low: null
+  central: null
+  high: null
+  as_of: "2026-11"
+  source: "ΔΕΝ ΒΡΕΘΗΚΕ πηγή"
+  url: ""
+  confidence: expert_guess
+  notes: "ΚΕΝΟ. Δεν βρέθηκε δημοσιευμένο περιθώριο, cash sweep ή DSRA από Πειραιώς, Εθνική, Alpha ή Eurobank. Να ζητηθεί ενδεικτικό term sheet."
+
+- id: CAND-037
+  domain: finance
+  name: rrf_loan_max_share_of_eligible_cost
+  description: "Μέγιστο ποσοστό δανείου Ταμείου Ανάκαμψης (RRF) επί του επιλέξιμου κόστους"
+  unit: "%"
+  low: null
+  central: 50
+  high: null
+  as_of: "2026-08"
+  source: "PowerGame, 'Ταμείο Ανάκαμψης: Η υπουργική απόφαση με τους όρους για τη χορήγηση δανείων'"
+  url: "https://www.powergame.gr/ikonomia/234046/tameio-anakampsis-i-ypourgiki-apofasi-me-tous-orous-gia-ti-chorigisi-daneion/"
+  confidence: sourced
+  notes: "Ελάχιστη ίδια συμμετοχή 20%. Οι εκταμιεύσεις έπρεπε να ολοκληρωθούν έως 26 Αυγ. 2026, άρα πρακτικά μη διαθέσιμο για νέες αποφάσεις. Το επιτόκιο δεν βρέθηκε."
+
+- id: CAND-038
+  domain: finance
+  name: raaey_storage_auction_awarded_support
+  description: "Προσφορές λειτουργικής ενίσχυσης στους διαγωνισμούς αποθήκευσης της ΡΑΑΕΥ"
+  unit: "EUR/MW/έτος"
+  low: 43927
+  central: 52589
+  high: 115000
+  as_of: "2025-12"
+  source: "michanikos.gr, 'Με συνολική ισχύ 188,9 MW τα εννέα έργα εγκατάστασης μπαταριών που επιλέχθηκαν μέσω διαγωνισμού της ΡΑΑΕΥ'. newmoney.gr για τα έργα ΔΕΗ 98 MW."
+  url: "https://www.newmoney.gr/roh/palmos-oikonomias/epixeiriseis/sti-dei-ananeosimes-dio-erga-apothikefsis-energias-98-mw/"
+  confidence: sourced
+  notes: "central = μεσοσταθμική προσφορά 9 έργων 188.9 MW. low = χαμηλότερη προσφορά. high = τιμή εκκίνησης προηγούμενου γύρου (οι τιμές βγήκαν 57% χαμηλότερα). Άλλος γύρος: περίπου 48.000 EUR/MW/έτος για 2 έργα 98 MW. Από αποσπάσματα αναζήτησης. Δεν ταυτοποιήθηκε ποιος γύρος είναι ποιος."
+
+- id: CAND-039
+  domain: finance
+  name: dapeep_bess_revenue_estimate_2026
+  description: "Εκτίμηση ΔΑΠΕΕΠ για έσοδα αυτόνομης μπαταρίας 2 ωρών το 2026 (υποθετικό πλήρες έτος)"
+  unit: "EUR/MW/έτος"
+  low: null
+  central: 157057
+  high: null
+  as_of: "2026-02"
+  source: "Μελέτη ΔΑΠΕΕΠ, μέσω Balkan Green Energy News, 'First Greek batteries to claim up to EUR 157,000 per MW in 2026' (17 Φεβ. 2026)"
+  url: "https://balkangreenenergynews.com/first-greek-batteries-to-claim-up-to-eur-157-000-per-mw-in-2026/"
+  confidence: sourced
+  notes: "Για 4 ώρες: 100.885 EUR/MW (μόνο β' εξάμηνο 2026). Χονδρεμπορική αγορά περίπου 65% των εσόδων αρχικά, 40% αργότερα, το υπόλοιπο εξισορρόπηση. Αφορά αυτόνομες μπαταρίες, όχι πίσω από τον μετρητή."
+
+- id: CAND-040
+  domain: finance
+  name: lcos_utility_bess_ember_2025
+  description: "LCOS μεγάλης μπαταρίας 4 ωρών και άνω, χωρίς κόστος φόρτισης"
+  unit: "USD/MWh"
+  low: null
+  central: 65
+  high: null
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (11 Δεκ. 2025)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "Παραδοχές: 20 έτη, RTE 90%, 80% αξιοποίηση ενός κύκλου ανά ημέρα, υποβάθμιση έως 2% ανά έτος, WACC 7%, O&M 2% CAPEX."
+
+- id: CAND-041
+  domain: finance
+  name: fx_usd_per_eur_2026
+  description: "Ισοτιμία USD ανά EUR που υπονοείται σε άρθρα του 2026 (για μετατροπές)"
+  unit: "USD/EUR"
+  low: 1.154
+  central: 1.16
+  high: 1.176
+  as_of: "2026-08"
+  source: "Παράγωγο από μετατροπές σε ESS News (11 Αυγ. 2026: 100 EUR = 115.44 USD) και pv magazine (7 Μαΐου 2026: 170 έως 250 EUR = 200 έως 294 USD)"
+  url: "https://www.ess-news.com/2026/08/11/standalone-bess-to-offer-up-to-12-returns-in-greece-aurora-forecasts/"
+  confidence: derived
+  notes: "Δεν ανακτήθηκε επίσημη ισοτιμία ΕΚΤ. Να αντικατασταθεί με ισοτιμία αναφοράς ΕΚΤ της ημέρας υπολογισμού."
+
+- id: CAND-042
+  domain: finance
+  name: europe_bess_financing_volume_2025
+  description: "Συναλλαγές χρηματοδότησης BESS στην Ευρώπη το 2025 (πλήθος)"
+  unit: "συναλλαγές"
+  low: 25
+  central: 82
+  high: null
+  as_of: "2026-03"
+  source: "Modo Energy, 'Europe battery financing deal report 2025' (11 Μαρ. 2026)"
+  url: "https://modoenergy.com/research/march-2026-europe-battery-financing-deal-report-2025"
+  confidence: sourced
+  notes: "82 συναλλαγές το 2025 (low = 25 το 2024), 13 χώρες, 8.6 δισ. EUR, δημοσιευμένο χρέος 6.1 δισ. EUR. Merchant έκθεση στο 44% των συναλλαγών αλλά 35% της ισχύος. Η Ελλάδα δεν αναφέρεται. Δεν δίνονται gearing, διάρκειες, περιθώρια, DSCR."
+
+# ===========================================================================
+# BATTERY: απόδοση, εγγυήσεις, υποβάθμιση
+# ===========================================================================
+- id: CAND-050
+  domain: battery
+  name: rte_ac_tesla_megapack_2xl
+  description: "AC round-trip efficiency Tesla Megapack 2 XL (2 ώρες low, 4 ώρες high)"
+  unit: "%"
+  low: 92.0
+  central: null
+  high: 93.7
+  as_of: "2023-02"
+  source: "Tesla, Megapack 2 XL Datasheet Rev. 1.5.1 (10 Φεβ. 2023)"
+  url: "https://portal.ct.gov/-/media/csc/3_petitions-medialibrary/petitions_medialibrary/mediapetitionnos1601-1700/pe1607/petitionersubmissions/supplement-attachment-a---megapack_2_xl_datasheet.pdf"
+  confidence: sourced
+  notes: "Ορισμός φύλλου δεδομένων: κύκλος πλήρους βάθους με όλες τις απώλειες μετατροπής ισχύος και θερμικού συστήματος, στους 25 C. 2 ώρες: 1927 kW, 3854 kWh. 4 ώρες: 979 kW, 3916 kWh. Στα 480 V AC, δηλαδή χωρίς μετασχηματιστή ΜΤ."
+
+- id: CAND-051
+  domain: battery
+  name: rte_ac_sungrow_powertitan_2
+  description: "Round-trip efficiency Sungrow PowerTitan 2.0 (δήλωση κατασκευαστή σε δελτίο τύπου)"
+  unit: "%"
+  low: null
+  central: 89.5
+  high: null
+  as_of: "2024-12"
+  source: "Sungrow, δελτίο τύπου PowerTitan 2.0 (pv magazine press release). Φύλλο δεδομένων ST5015UX-2H/4H-US Version 5 για τα υπόλοιπα στοιχεία."
+  url: "https://www.pv-magazine.com/press-releases/sungrow-liquid-cooled-ess-powertitan-2-0-is-set-to-unleash-the-ac-block-era/"
+  confidence: sourced
+  notes: "Το φύλλο δεδομένων ΔΕΝ αναγράφει RTE ούτε βοηθητική κατανάλωση. Στοιχεία φύλλου: LFP 3.2 V / 314 Ah, 416S12P, 5015 kWh, 210 kVA x 12 (2 ώρες) ή x 6 (4 ώρες), 690 V, υγρή ψύξη, -30 έως 50 C (derating πάνω από 45 C)."
+
+- id: CAND-052
+  domain: battery
+  name: rte_ac_fluence_gridstack_pro
+  description: "Round-trip efficiency Fluence Gridstack Pro (κατώτατο δηλωμένο)"
+  unit: "%"
+  low: 87
+  central: null
+  high: null
+  as_of: "2025-02"
+  source: "Fluence, Gridstack Pro Global Specs (φύλλο προδιαγραφών), από απόσπασμα αναζήτησης"
+  url: "https://info.fluenceenergy.com/hubfs/Fluence%20Gridstack%20Pro_Global_US%20EN.pdf"
+  confidence: sourced
+  notes: "Αναγράφεται 'Round Trip Efficiency > 87%' για διάρκειες 2, 4, 6 ωρών. Το PDF δεν διαβάστηκε απευθείας."
+
+- id: CAND-053
+  domain: battery
+  name: rte_ac_planning_range
+  description: "Εύρος AC round-trip efficiency για το DSS (σε επίπεδο σημείου σύνδεσης)"
+  unit: "%"
+  low: 85
+  central: 88
+  high: 92
+  as_of: "2026-06"
+  source: "Παράγωγο: NREL ATB 2025 (85%), παρατηρηθείσα τιμή ελληνικού στόλου β' τριμήνου 2026 (88.3%, CAND-054), Tesla Megapack 2 XL 2 ωρών (92.0%). Ember: 90% νέα συστήματα, 80 έως 85% παλαιότερα."
+  url: "https://atb.nlr.gov/electricity/2025/utility-scale_battery_storage"
+  confidence: derived
+  notes: "Οι τιμές φύλλων δεδομένων είναι στους 25 C και συνήθως χωρίς Μ/Σ ΜΤ και χωρίς κατανάλωση αναμονής. Για AC-coupled retrofit η ενέργεια Φ/Β περνά επιπλέον από τον αντιστροφέα Φ/Β πριν φορτίσει την μπαταρία."
+
+- id: CAND-054
+  domain: battery
+  name: greece_bess_fleet_observed_rte_q2_2026
+  description: "Παρατηρηθείς λόγος εκφόρτισης προς φόρτιση των πρώτων ελληνικών μπαταριών, Απρ. έως Ιούν. 2026"
+  unit: "%"
+  low: 88.3
+  central: 88.3
+  high: 90.2
+  as_of: "2026-06"
+  source: "Παράγωγο από The Green Tank (δεδομένα ΑΔΜΗΕ), μέσω michanikos.gr (5 Αυγ. 2026) και PowerGame (29 Ιουλ. 2026)"
+  url: "https://www.powergame.gr/epichirisis/1395032/apothikefsi-energeias-oi-bataries-630-mw-pou-bikan-stin-priza-fetos-kai-ta-epomena-vimata/"
+  confidence: derived
+  notes: "Τρίμηνο: 27.1 GWh εκφόρτιση / 30.7 GWh φόρτιση = 88.3%. Ιούνιος: 14.8 / 16.4 = 90.2%. Αγνοείται η μεταβολή SoC στα άκρα της περιόδου και το πού μετριέται η ενέργεια, άρα είναι ένδειξη, όχι μέτρηση RTE."
+
+- id: CAND-055
+  domain: battery
+  name: bess_auxiliary_load
+  description: "Βοηθητική κατανάλωση (ψύξη, BMS, αναμονή) σε kW ανά MWh ή % ανά ημέρα"
+  unit: "kW/MWh"
+  low: null
+  central: null
+  high: null
+  as_of: "2026-11"
+  source: "ΔΕΝ ΒΡΕΘΗΚΕ ποσοτική πηγή"
+  url: ""
+  confidence: expert_guess
+  notes: "ΚΕΝΟ. Τα φύλλα δεδομένων Tesla και Sungrow δεν δίνουν ξεχωριστή τιμή. Το RTE της Tesla περιλαμβάνει θερμικές απώλειες μόνο κατά τον κύκλο στους 25 C. Κλαδικός τύπος σημειώνει ότι οι εγγυήσεις απόδοσης συχνά εξαιρούν HVAC και αναμονή. Η αυτοεκφόρτιση επίσης δεν βρέθηκε. Να ζητηθεί από προμηθευτή."
+
+- id: CAND-056
+  domain: battery
+  name: bess_warranty_term_years
+  description: "Διάρκεια εγγύησης χωρητικότητας BESS"
+  unit: "έτη"
+  low: 10
+  central: 15
+  high: 20
+  as_of: "2023-02"
+  source: "DNV, 'Energy storage capacity warranties: beyond the fine print' (27 Απρ. 2021). Tesla Megapack 2 XL Datasheet Rev. 1.5.1 (15 έτη βασική, επέκταση έως 20)."
+  url: "https://dnv.com/article/energy-storage-capacity-warranties-beyond-the-fine-print-200339"
+  confidence: sourced
+  notes: "DNV: συνήθως 10, 15 ή 20 έτη, ορισμένοι πάροχοι 20 έως 25 με αυστηρότερους όρους. Τυπικοί όροι: περίπου 1 πλήρης εκφόρτιση ανά ημέρα κατά μέσο όρο, μέσο ετήσιο SoC κάτω από 50%, περίπου 25 C στο εσωτερικό, όρια C-rate 0.25C, 0.5C ή 1C."
+
+- id: CAND-057
+  domain: battery
+  name: bess_warranty_cycles_per_day
+  description: "Επιτρεπόμενοι κύκλοι ανά ημέρα στην εγγύηση"
+  unit: "κύκλοι/ημέρα"
+  low: 1.0
+  central: 1.5
+  high: 2.0
+  as_of: "2025-12"
+  source: "DNV (2021) για 1 κύκλο ανά ημέρα. Energy-Storage.news, 'Cycle limits are major cap on revenues...' και σχετικά άρθρα για 1.5 έως 2 (αποσπάσματα αναζήτησης)."
+  url: "https://www.energy-storage.news/cycle-limits-are-major-cap-on-revenues-industry-looks-beyond-warranties-as-bess-prices-continue-to-fall/"
+  confidence: sourced
+  notes: "Αποσπάσματα: όρια ζωής που αντιστοιχούν κατά μέσο όρο σε 1.8 έως 2 κύκλους ανά ημέρα. Trina περίπου 548 κύκλοι ανά έτος (1.5 ανά ημέρα). Τα πλήρη άρθρα δεν διαβάστηκαν (403)."
+
+- id: CAND-058
+  domain: battery
+  name: bess_warranty_total_cycles
+  description: "Συνολικοί κύκλοι που καλύπτει τυπικά η εγγύηση"
+  unit: "κύκλοι"
+  low: 10000
+  central: null
+  high: 12000
+  as_of: "2025-10"
+  source: "Ember, 'How cheap is battery storage?' (οι εγγυήσεις είναι τυπικά 10.000 έως 12.000+ κύκλοι)"
+  url: "https://ember-energy.org/latest-insights/how-cheap-is-battery-storage/"
+  confidence: sourced
+  notes: "Το CATL TENER διαφημίζεται με 15.000 κύκλους και μηδενική υποβάθμιση τα πρώτα 5 έτη (New Atlas, Energy-Storage.news, Απρ. 2024), χωρίς δημοσιευμένους όρους εγγύησης."
+
+- id: CAND-059
+  domain: battery
+  name: bess_end_of_warranty_soh
+  description: "SoH στο τέλος της εγγύησης (15 έως 20 έτη)"
+  unit: "%"
+  low: 60
+  central: 65
+  high: 70
+  as_of: "2025-12"
+  source: "Κλαδικός τύπος (ESS News, 'Making BESS warranties work', 19 Σεπ. 2025, από απόσπασμα αναζήτησης). Ember: περίπου 65% μετά από 20 έτη με υποβάθμιση έως 2% ανά έτος."
+  url: "https://www.ess-news.com/2025/09/19/making-bess-warranties-work-contracts-vs-reality"
+  confidence: sourced
+  notes: "Το απόσπασμα αναφέρει ότι τα κατώφλια έπεσαν από 70% σε παλαιότερες συμβάσεις σε 65% και σε κάποιες περιπτώσεις 60%. Το πλήρες άρθρο δεν διαβάστηκε."
+
+- id: CAND-060
+  domain: battery
+  name: bess_design_life_years
+  description: "Διάρκεια ζωής σχεδιασμού για οικονομική ανάλυση"
+  unit: "έτη"
+  low: 15
+  central: 20
+  high: null
+  as_of: "2025-10"
+  source: "NREL ATB 2025 (15 έτη). Ember (20 έτη)."
+  url: "https://atb.nlr.gov/electricity/2025/utility-scale_battery_storage"
+  confidence: sourced
+  notes: ""
+
+- id: CAND-061
+  domain: battery
+  name: lfp_soh_after_20y_blast_250ah_model
+  description: "Προβλεπόμενο SoH κυψέλης μετά από 20 έτη, μοντέλο BLAST-Lite LFP-Gr 250 Ah, 25 C, μέσο SoC 50%"
+  unit: "%"
+  low: 57.4
+  central: 67.7
+  high: 77.5
+  as_of: "2026-11"
+  source: "Υπολογισμός του ερευνητή με τις εξισώσεις και τους συντελεστές του NREL BLAST-Lite, blast/models/lfp_gr_250AhPrismatic_2019.py (δεδομένα: Gasper et al. 2023, J. Energy Storage, doi 10.1016/j.est.2023.109042)"
+  url: "https://github.com/NREL/BLAST-Lite/blob/main/blast/models/lfp_gr_250AhPrismatic_2019.py"
+  confidence: derived
+  notes: "high: 1 EFC/ημέρα, DoD 0.8. central: 1.5 EFC/ημέρα, DoD 0.9. low: 2 EFC/ημέρα, DoD 0.9. Σταθερές συνθήκες, κλειστός τύπος q = 1 - kcal t^0.526 - kcyc EFC^0.828, Crate = χρονικός μέσος = 2 x EFC/ημέρα / 24. Επίπεδο κυψέλης. Το README του BLAST συνιστά 20 έως 30% μικρότερη ζωή σε επίπεδο πακέτου. Στα 10 έτη: 86.6%, 81.1%, 75.3%."
+
+- id: CAND-062
+  domain: battery
+  name: lfp_soh_after_20y_naumann_model
+  description: "Προβλεπόμενο SoH κυψέλης μετά από 20 έτη, μοντέλο Naumann (Sony/Murata 3 Ah LFP), 25 C, SoC 50%"
+  unit: "%"
+  low: 62.3
+  central: 68.6
+  high: 70.1
+  as_of: "2026-11"
+  source: "Υπολογισμός του ερευνητή με τους συντελεστές Naumann et al. 2018 και 2020 όπως υλοποιούνται στο SimSES 2.1.1 (TUM)"
+  url: "https://pypi.org/project/simses/"
+  confidence: derived
+  notes: "high: 1 EFC/ημέρα, 0.25C, DoD 0.8. central: 1 EFC/ημέρα, 0.5C, DoD 0.8. low: 2 EFC/ημέρα, 0.5C, DoD 0.9. Ημερολογιακή απώλεια 19.0% και στις τρεις περιπτώσεις (κυριαρχεί). Κυψέλη υψηλής ισχύος 3 Ah, όχι αντιπροσωπευτική των 280 έως 314 Ah. Χρήσιμο ως απαισιόδοξος έλεγχος για ημερολογιακή γήρανση."
+
+- id: CAND-063
+  domain: battery
+  name: greece_min_storage_duration_btm
+  description: "Ελάχιστη ωφέλιμη χωρητικότητα μπαταρίας πίσω από τον μετρητή ως προς την εγκατεστημένη ισχύ του Φ/Β σταθμού"
+  unit: "ώρες"
+  low: 1
+  central: 1
+  high: 1
+  as_of: "2026-07"
+  source: "PowerGame, 'Φωτοβολταϊκά: Πώς επιχειρείται να ξεκολλήσει η εγκατάσταση μπαταριών πίσω από τον μετρητή' (25 Ιουλ. 2026)"
+  url: "https://www.powergame.gr/energygame/1393800/fotovoltaika-pos-epicheireitai-na-xekollisei-i-egkatastasi-batarion-piso-apo-ton-metriti/"
+  confidence: sourced
+  notes: "Ο κλάδος (ΣΕΦ) θεωρεί το όριο υπερβολικό και ζητά αναθεώρηση. Το ΥΠΕΝ φέρεται να διατηρεί την κατεύθυνση. Κρίσιμος περιορισμός για τη διαστασιολόγηση: να επιβεβαιωθεί στο κείμενο της ρύθμισης (η ρυθμιστική έρευνα είναι άλλου πακέτου)."
+
+- id: CAND-064
+  domain: battery
+  name: pv_clipping_loss_at_ilr_1_3
+  description: "Ενέργεια που ψαλιδίζεται (clipping) σε Φ/Β σταθερής κλίσης με λόγο DC/AC 1.3"
+  unit: "% δυνητικής παραγωγής"
+  low: null
+  central: 0.7
+  high: 2.0
+  as_of: "2017-08"
+  source: "Denholm, Eichman, Margolis, 'Evaluating the Technical and Economic Performance of PV Plus Storage Power Plants', NREL/TP-6A20-68737 (Αύγ. 2017)"
+  url: "https://www.ourenergypolicy.org/wp-content/uploads/2017/10/68737.pdf"
+  confidence: sourced
+  notes: "central = ετήσιο 0.7% (50 MW AC, Καλιφόρνια). high = περίπου 2% σε μία ηλιόλουστη ημέρα του παραδείγματος. Η αξία της ανάκτησης clipping με DC σύζευξη ήταν κάτω από 1% των εσόδων. Η μελέτη θεωρεί RTE 85% AC-AC και για τις δύο συζεύξεις. Διαβάστηκε από αντίγραφο στο ourenergypolicy.org. Αφορά ΗΠΑ, όχι Ελλάδα."
+
+- id: CAND-065
+  domain: battery
+  name: greek_pv_parks_dc_ac_ratio
+  description: "Τυπικός λόγος DC/AC ελληνικών Φ/Β πάρκων"
+  unit: "λόγος"
+  low: null
+  central: null
+  high: null
+  as_of: "2026-11"
+  source: "ΔΕΝ ΒΡΕΘΗΚΕ πηγή"
+  url: ""
+  confidence: expert_guess
+  notes: "ΚΕΝΟ. Δεν βρέθηκε στατιστική για τον λόγο DC/AC των ελληνικών πάρκων. Το DSS πρέπει να τον παίρνει ως είσοδο από τον ιδιοκτήτη."
+
+# ===========================================================================
+# MARKET FACTS: Ελλάδα
+# ===========================================================================
+- id: CAND-100
+  domain: market_fact
+  name: greece_pv_installed_capacity_end_2025
+  description: "Συνολική διασυνδεδεμένη ισχύς Φ/Β στην Ελλάδα στο τέλος του 2025"
+  unit: "MWp"
+  low: 11500
+  central: 11538
+  high: 11700
+  as_of: "2025-12"
+  source: "ΣΕΦ (HELAPCO), μέσω michanikos.gr και pv magazine, 'Greece installs 1.9 GW of PV capacity in 2025' (7 Απρ. 2026)"
+  url: "https://www.pv-magazine.com/2026/04/07/greece-installs-1-9-gw-of-pv-capacity-in-2025/"
+  confidence: sourced
+  notes: "central = 11.538 MWp (ΣΕΦ). high = 11.7 GW ηλιακά κατά στοιχεία ΑΔΜΗΕ που παραθέτει το PowerGame (2 Μαρ. 2026). Επιπλέον περίπου 800 MW εγκατεστημένα αλλά μη συνδεδεμένα στο τέλος του 2025."
+
+- id: CAND-101
+  domain: market_fact
+  name: greece_pv_new_capacity_2025
+  description: "Νέα διασυνδεδεμένη ισχύς Φ/Β το 2025"
+  unit: "MW"
+  low: 1840
+  central: 1893.5
+  high: null
+  as_of: "2025-12"
+  source: "ΣΕΦ (HELAPCO), μέσω pv magazine (7 Απρ. 2026) και michanikos.gr"
+  url: "https://www.pv-magazine.com/2026/04/07/greece-installs-1-9-gw-of-pv-capacity-in-2025/"
+  confidence: sourced
+  notes: "Δύο τιμές ΣΕΦ: 1.840 MWp και 1.893,5 MW. 1.191 MW στο σύστημα μεταφοράς, 702,5 MW στη διανομή, περίπου 270 MW αυτοκατανάλωση. Το 2024: 2.572 MW."
+
+- id: CAND-102
+  domain: market_fact
+  name: greece_res_installed_capacity_2026
+  description: "Εγκατεστημένη ισχύς ΑΠΕ στην Ελλάδα (σύνολο, εκ των οποίων ηλιακά 11.7 GW και αιολικά 5.6 GW)"
+  unit: "GW"
+  low: null
+  central: 17.9
+  high: null
+  as_of: "2026-03"
+  source: "Στοιχεία ΑΔΜΗΕ όπως παρατίθενται στο PowerGame, 'Στα σκουπίδια 3,5 TWh πράσινης ενέργειας το 2026' (2 Μαρ. 2026)"
+  url: "https://www.powergame.gr/energygame/1312629/sta-skoupidia-35-twh-prasinis-energeias-to-2026-ta-metra-pou-dromologei-to-ypen/"
+  confidence: sourced
+  notes: "9.0 GW στο σύστημα, 8.9 GW στο δίκτυο διανομής. Αιχμή ζήτησης περίπου 11 GW, ετήσια ζήτηση 50 έως 51 TWh. Δεσμευμένος ηλεκτρικός χώρος περίπου 84 GW. Το άρθρο χαρακτηρίζει τα στοιχεία ως β' τριμήνου 2026 ενώ δημοσιεύτηκε Μάρτιο, άρα η περίοδος αναφοράς είναι ασαφής."
+
+- id: CAND-103
+  domain: market_fact
+  name: greece_bess_installed_capacity_2026
+  description: "Εγκατεστημένη ισχύς μπαταριών στην Ελλάδα μέσα στο 2026 (Ιούνιος, Ιούλιος, Οκτώβριος)"
+  unit: "MW"
+  low: 540
+  central: 630
+  high: 800
+  as_of: "2026-10"
+  source: "The Green Tank μέσω michanikos.gr (5 Αυγ. 2026). PowerGame (29 Ιουλ. 2026). ΟΤ (19 Οκτ. 2026)."
+  url: "https://www.ot.gr/2026/10/19/green/apothikeysi-energeias/apothikeysi-energeias-mparaz-ependyseon-se-mpataries"
+  confidence: sourced
+  notes: "low: 9 μπαταρίες, 540 MW απορρόφηση στο τέλος Ιουνίου 2026. central: 630 MW τον Ιούλιο (530 ΑΔΜΗΕ, περίπου 100 ΔΕΔΔΗΕ). high: 800 MW τον Οκτώβριο. Οι πρώτες δύο μπαταρίες μπήκαν στην αγορά την 1 Απρ. 2026 (7.8 MW/15.6 MWh και 8.875 MW/17.75 MWh). Στόχοι: περίπου 1 GW τέλος 2026, 1.5 GW μέσα 2027, 3 GW το 2028."
+
+- id: CAND-104
+  domain: market_fact
+  name: greece_res_curtailment_2024
+  description: "Περικοπές ΑΠΕ στην Ελλάδα το 2024"
+  unit: "GWh"
+  low: 899
+  central: 899
+  high: 900
+  as_of: "2024-12"
+  source: "The Green Tank (Ν. Μάντζαρης, παρουσίαση ΕΛΕΤΑΕΝ, 28 Φεβ. 2026). pv magazine (4 Μαρ. 2026)."
+  url: "https://eletaen.gr/wp-content/uploads/2026/03/2026-02-28-Mantzaris-presentation-eletaen-verdetec.pdf"
+  confidence: sourced
+  notes: ""
+
+- id: CAND-105
+  domain: market_fact
+  name: greece_res_curtailment_2025
+  description: "Περικοπές ΑΠΕ στην Ελλάδα το 2025"
+  unit: "GWh"
+  low: 1867
+  central: 1867
+  high: 2000
+  as_of: "2025-12"
+  source: "The Green Tank (παρουσίαση ΕΛΕΤΑΕΝ, 28 Φεβ. 2026) για 1.867 GWh. Π. Μπίσκας (ΑΠΘ) μέσω pv magazine και PowerGame για περίπου 2 TWh."
+  url: "https://eletaen.gr/wp-content/uploads/2026/03/2026-02-28-Mantzaris-presentation-eletaen-verdetec.pdf"
+  confidence: sourced
+  notes: "Περίπου 7.5% της παραγωγής ΑΠΕ (pv magazine). Οι επίσημες περικοπές δεν μετρούν τις ώρες με μηδενική ή αρνητική τιμή. Απώλεια εσόδων Φ/Β περίπου 20% το 2025 (Θ. Βαλκούμα, Faria Renewables)."
+
+- id: CAND-106
+  domain: market_fact
+  name: greece_res_curtailment_2026_forecast
+  description: "Πρόβλεψη περικοπών ΑΠΕ για το 2026"
+  unit: "TWh"
+  low: 3.3
+  central: 3.5
+  high: 3.7
+  as_of: "2026-03"
+  source: "Π. Μπίσκας, εργαστήριο ΑΠΘ (εκδήλωση ΠΟΣΠΗΕΦ), μέσω PowerGame (2 Μαρ. 2026) και pv magazine (4 Μαρ. 2026)"
+  url: "https://www.pv-magazine.com/2026/03/04/greek-pv-producers-fret-3-5-twh-of-curtailments-in-2026/"
+  confidence: sourced
+  notes: "Περίπου 75% πάνω από το 2025, περίπου 12% της παραγωγής ΑΠΕ. Αφορά καθαρή περικοπτόμενη ενέργεια, χωρίς τις απώλειες από μηδενικές ή αρνητικές τιμές."
+
+- id: CAND-107
+  domain: market_fact
+  name: greece_res_curtailment_2026_actual_to_date
+  description: "Πραγματικές περικοπές ΑΠΕ το 2026: α' εξάμηνο (low) και οκτάμηνο (high)"
+  unit: "GWh"
+  low: 1601
+  central: null
+  high: 1905
+  as_of: "2026-08"
+  source: "The Green Tank (επιλύσεις ISP ΑΔΜΗΕ) μέσω michanikos.gr (5 Αυγ. 2026). ΟΤ (19 Οκτ. 2026) για το οκτάμηνο."
+  url: "https://www.ot.gr/2026/10/19/green/apothikeysi-energeias/apothikeysi-energeias-mparaz-ependyseon-se-mpataries"
+  confidence: sourced
+  notes: "Α' εξάμηνο 2026: 1.601 GWh, 9.6% της παραγωγής ΑΠΕ, +20.7% έναντι α' εξαμήνου 2025. Ιούνιος 2026: 298.3 GWh. Μάιος 2026: 418.3 GWh. Οι μπαταρίες απορρόφησαν 121.8 GWh από Απρίλιο έως Αύγουστο."
+
+- id: CAND-108
+  domain: market_fact
+  name: greece_zero_or_negative_price_hours_h1
+  description: "Ώρες με σχεδόν μηδενική ή αρνητική τιμή DAM: α' εξάμηνο 2025 (low) και α' εξάμηνο 2026 (high)"
+  unit: "ώρες"
+  low: 168
+  central: null
+  high: 788
+  as_of: "2026-06"
+  source: "The Green Tank, μέσω michanikos.gr (5 Αυγ. 2026)"
+  url: "https://www.michanikos.gr/index/articles/%CE%B5%CE%BD%CE%AD%CF%81%CE%B3%CE%B5%CE%B9%CE%B1-%CE%B1%CF%80%CE%B5/the-green-tank-%CE%BF%CE%B9-%CE%BC%CF%80%CE%B1%CF%84%CE%B1%CF%81%CE%AF%CE%B5%CF%82-%CE%B1%CF%80%CE%BF%CF%81%CF%81%CF%8C%CF%86%CE%B7%CF%83%CE%B1%CE%BD-164-gwh-%CE%BA%CE%B1%CE%B9-%CE%B1%CF%80%CE%AD%CF%84%CF%81%CE%B5%CF%88%CE%B1%CE%BD-%CF%84%CE%BF-45-%CF%84%CF%89%CE%BD-%CF%80%CE%B5%CF%81%CE%B9%CE%BA%CE%BF%CF%80%CF%8E%CE%BD-%CE%B1%CF%80%CE%B5-r17873/"
+  confidence: sourced
+  notes: "Ορισμός: τιμές κάτω από 0.05 EUR/MWh. Ιούνιος 2026: 146.5 ώρες (Ιούνιος 2025 περίπου 44, παράγωγο). Αύξηση περίπου 4.7 φορές."
+
+- id: CAND-109
+  domain: market_fact
+  name: greece_negative_price_hours_2026_first_227_days
+  description: "Ώρες με αρνητική τιμή στην Ελλάδα στις πρώτες 227 ημέρες του 2026"
+  unit: "ώρες"
+  low: null
+  central: 476
+  high: null
+  as_of: "2026-08"
+  source: "S. Sen (WSP), 'Europe's second energy crisis largely skipped the solar hours', pv magazine (14 Οκτ. 2026), δεδομένα ENTSO-E"
+  url: "https://www.pv-magazine.com/2026/10/14/europes-second-energy-crisis-largely-skipped-the-solar-hours/"
+  confidence: sourced
+  notes: "Το 2022 στο ίδιο παράθυρο: 0 ώρες. Μάρτιος έως Ιούνιος 2026: 285 ώρες έναντι 12 το 2025. Μεταξύ 19% και 23% της ηλιακής παραγωγής (Ισπανία, Γερμανία, Ελλάδα) έγινε με αρνητικές τιμές."
+
+- id: CAND-110
+  domain: market_fact
+  name: greece_negative_price_hours_2025_full_year
+  description: "Ώρες με αρνητική τιμή στην Ελλάδα σε όλο το 2025"
+  unit: "ώρες"
+  low: null
+  central: 96
+  high: null
+  as_of: "2025-12"
+  source: "Electricity Maps, 'Electricity Grid Review 2025: Greece' (από απόσπασμα αναζήτησης)"
+  url: "https://www.electricitymaps.com/grid-in-review-2025/greece"
+  confidence: sourced
+  notes: "ΧΑΜΗΛΗ ΒΕΒΑΙΟΤΗΤΑ. 96 ώρες σε 26 ημέρες. Η τιμή 2024 ήταν αλλοιωμένη στο απόσπασμα (πιθανώς 11). Αντικρουόμενο στοιχείο: δήλωση ΥΠΕΝ για 203 μηδενικές και 242 αρνητικές ώρες μέχρι κάποια στιγμή του 2025 (Balkan Green Energy News, ασαφής ημερομηνία). Σεπτέμβριος 2025: 27 αρνητικές ώρες, χαμηλότερη τιμή -14.8 EUR/MWh (21 Σεπ. 2025). Συνιστάται υπολογισμός απευθείας από δεδομένα HEnEx. Ετήσιο σύνολο 2024 ΔΕΝ βρέθηκε."
+
+- id: CAND-111
+  domain: market_fact
+  name: greece_solar_capture_rate
+  description: "Capture rate ηλιακών στην Ελλάδα: 2026 (low, πρώτες 227 ημέρες), 2025 (central), 2022 (high)"
+  unit: "%"
+  low: 43
+  central: 58
+  high: 94
+  as_of: "2026-08"
+  source: "S. Sen (WSP), pv magazine (14 Οκτ. 2026), δεδομένα ENTSO-E"
+  url: "https://www.pv-magazine.com/2026/10/14/europes-second-energy-crisis-largely-skipped-the-solar-hours/"
+  confidence: sourced
+  notes: "2022: 94%, 2025 πλήρες έτος: 58%, 2025 στις ίδιες ημερομηνίες: 52%. Το 43% για το 2026 είναι παράγωγο (το άρθρο λέει 9.4 μονάδες κάτω από την αναφορά 2025). Η capture price του παραθύρου 2026 είναι 83% χαμηλότερη από το 2022."
+
+- id: CAND-112
+  domain: market_fact
+  name: greece_solar_capture_price_mar_jun
+  description: "Capture price ηλιακών Μάρτιος έως Ιούνιος: 2026 (low) έναντι 2025 (high)"
+  unit: "EUR/MWh"
+  low: 33
+  central: null
+  high: 49
+  as_of: "2026-06"
+  source: "S. Sen (WSP), pv magazine (14 Οκτ. 2026), δεδομένα ENTSO-E"
+  url: "https://www.pv-magazine.com/2026/10/14/europes-second-energy-crisis-largely-skipped-the-solar-hours/"
+  confidence: sourced
+  notes: "Μάιος 2026 κατά ACER (μέσω Balkan Green Energy News): capture price 24.63 EUR/MWh έναντι μέσης τιμής αγοράς 88.95 EUR/MWh (απόσπασμα αναζήτησης). Ειδική τιμή αγοράς Φ/Β Αυγ. 2025: 25 EUR/MWh (ρεκόρ χαμηλού τότε)."
+
+- id: CAND-113
+  domain: market_fact
+  name: greece_evening_peak_price_range
+  description: "Τιμές χονδρεμπορικής στις ώρες 19:00 έως 22:00 όταν μηδενίζεται η ηλιακή παραγωγή"
+  unit: "EUR/MWh"
+  low: 170
+  central: null
+  high: 250
+  as_of: "2026-05"
+  source: "Π. Τσικούρας (ΠΟΣΠΗΕΦ), μέσω ESS News / pv magazine (7 Μαΐου 2026)"
+  url: "https://www.ess-news.com/?p=8883"
+  confidence: sourced
+  notes: "Δήλωση εκπροσώπου συνδέσμου, όχι στατιστική. Η WSP δίνει ενδεικτικό spread 2 ωρών 150 EUR/MWh το 2025 και 157 EUR/MWh το 2026 (πριν από απώλειες)."
+
+- id: CAND-114
+  domain: market_fact
+  name: greece_bess_q2_2026_average_charge_and_discharge_price
+  description: "Μέση τιμή φόρτισης (low) και εκφόρτισης (high) των πρώτων ελληνικών μπαταριών, Απρ. έως Ιούν. 2026"
+  unit: "EUR/MWh"
+  low: 17.6
+  central: null
+  high: 155
+  as_of: "2026-06"
+  source: "Παράγωγο από PowerGame (29 Ιουλ. 2026): κόστος φόρτισης περίπου 539.000 EUR για 30.7 GWh, έσοδα περίπου 4.2 εκατ. EUR για 27.1 GWh"
+  url: "https://www.powergame.gr/epichirisis/1395032/apothikefsi-energeias-oi-bataries-630-mw-pou-bikan-stin-priza-fetos-kai-ta-epomena-vimata/"
+  confidence: derived
+  notes: "539.000 / 30.700 MWh = 17.6 EUR/MWh. 4.200.000 / 27.100 MWh = 155 EUR/MWh. Μικτό spread περίπου 137 EUR/MWh. Αφορά πολύ μικρό στόλο (first mover), δεν είναι αντιπροσωπευτικό του μέλλοντος."
+
+- id: CAND-115
+  domain: market_fact
+  name: greece_pv_parks_fip_eligible_for_btm_battery
+  description: "Φ/Β πάρκα με feed-in premium που θα μπορούσαν να προσθέσουν μπαταρία πίσω από τον μετρητή"
+  unit: "πάρκα"
+  low: null
+  central: 6000
+  high: null
+  as_of: "2026-07"
+  source: "PowerGame, 'Φωτοβολταϊκά: Πώς επιχειρείται να ξεκολλήσει η εγκατάσταση μπαταριών πίσω από τον μετρητή' (25 Ιουλ. 2026)"
+  url: "https://www.powergame.gr/energygame/1393800/fotovoltaika-pos-epicheireitai-na-xekollisei-i-egkatastasi-batarion-piso-apo-ton-metriti/"
+  confidence: sourced
+  notes: "Κύριο εμπόδιο κατά το άρθρο: έλλειψη χρηματοδότησης. Δεν βρέθηκε κατανομή ανά μέγεθος (500 kW, 1 MW) ούτε πλήθος πάρκων FiT κάτω από 1 MW. ΔΑΠΕΕΠ Δεκ. 2025: 22.919 ενεργές συμβάσεις ΑΠΕ συνολικής ισχύος 13.00 GW (όλες οι τεχνολογίες, απόσπασμα αναζήτησης, το PDF έδωσε 403). Πάνω από 7 GW ΑΠΕ σε CfD (μονάδες άνω των 400 kW, Balkan Green Energy News, 23 Σεπ. 2025)."
+
+- id: CAND-116
+  domain: market_fact
+  name: greece_btm_storage_applications_deddie
+  description: "Αιτήσεις προσθήκης μπαταρίας πίσω από τον μετρητή σε υφιστάμενα Φ/Β (πλήθος, MW)"
+  unit: "αιτήσεις"
+  low: null
+  central: null
+  high: null
+  as_of: "2026-11"
+  source: "ΔΕΝ ΒΡΕΘΗΚΕ αριθμός. Σχετικό άρθρο energypress ('Μετρημένο το ενδιαφέρον για behind the meter μπαταρίες στα υφιστάμενα φωτοβολταϊκά') έδωσε 403."
+  url: "https://energypress.gr/news/metrimeno-endiaferon-gia-behind-meter-mpataries-sta-yfistamena-fotoboltaika-analytika-ta"
+  confidence: expert_guess
+  notes: "ΚΕΝΟ. Ο τίτλος του άρθρου δηλώνει μετρημένο ενδιαφέρον και ότι περιέχει αναλυτικά στοιχεία, αλλά το κείμενο δεν ανακτήθηκε. Να διαβαστεί χειροκίνητα."
+
+- id: CAND-117
+  domain: market_fact
+  name: greece_standalone_bess_priority_capacity
+  description: "Ηλεκτρικός χώρος προτεραιότητας για merchant αυτόνομες μπαταρίες (πρόσκληση ΥΠΕΝ)"
+  unit: "GW"
+  low: 4.7
+  central: 4.7
+  high: 12.15
+  as_of: "2026-10"
+  source: "PowerGame (29 Ιουλ. 2026). ΟΤ (19 Οκτ. 2026). ESS News (Μαρ. 2026) για τις αιτήσεις 12.15 GW."
+  url: "https://www.ot.gr/2026/10/19/green/apothikeysi-energeias/apothikeysi-energeias-mparaz-ependyseon-se-mpataries"
+  confidence: sourced
+  notes: "4.7 GW: περίπου 0.9 GW στο δίκτυο ΔΕΔΔΗΕ και 3.8 GW στο σύστημα ΑΔΜΗΕ. high = αιτήσεις 12.15 GW. Περίπου 720 αιτήσεις συνολικά 9 GW πέρασαν τον έλεγχο πληρότητας. Άδειες ΡΑΑΕΥ για μπαταρίες: 1.592 έργα, 55.3 GW / 166.2 GWh. Διαγωνισμοί με ενίσχυση: περίπου 900 MW σε τρεις γύρους."
+
+- id: CAND-118
+  domain: market_fact
+  name: greece_res_plus_storage_subsidy_budget
+  description: "Προϋπολογισμός σχεδιαζόμενης επιδότησης για αποθήκευση σε συνδυασμό με έργα ΑΠΕ (κατηγορίες 11Α και 11Γ)"
+  unit: "εκατ. EUR"
+  low: null
+  central: 50
+  high: 200
+  as_of: "2026-10"
+  source: "PowerGame, 'Μπαταρίες: Ξεκλειδώνουν εντός του 2026 οι επιδοτήσεις, ποιοι επενδυτές αποκτούν προβάδισμα' (16 Οκτ. 2026)"
+  url: "https://www.powergame.gr/green-power/1436120/bataries-xekleidonoun-entos-tou-2026-oi-epidotiseis-poioi-ependytes-apoktoun-provadisma/"
+  confidence: sourced
+  notes: "high = σύνολο τεσσάρων προγραμμάτων 200 εκατ. EUR, προκηρύξεις έως τέλος 2026. Επιλέξιμα: 11Α (πίσω από τον μετρητή χωρίς φόρτιση από το δίκτυο) και 11Γ. ΜΗ επιλέξιμα: 11Β (με δυνατότητα φόρτισης από το δίκτυο). Επιλογή με διαγωνισμό βάσει μικρότερης αιτούμενης ενίσχυσης. Επηρεάζει άμεσα την απόφαση: η επιλογή φόρτισης από το δίκτυο αποκλείει την επιδότηση."
+
+- id: CAND-119
+  domain: market_fact
+  name: greece_banks_declining_storage_finance
+  description: "Συστημικές τράπεζες που αρνήθηκαν χρηματοδότηση αποθήκευσης σε διερεύνηση του Π. Μπίσκα (από 3 που ρωτήθηκαν)"
+  unit: "τράπεζες"
+  low: null
+  central: 3
+  high: null
+  as_of: "2026-03"
+  source: "pv magazine, 'Greece faces rising renewables curtailment, driving solar-plus-storage' (4 Μαρ. 2026)"
+  url: "https://www.pv-magazine.com/2026/03/04/greek-pv-producers-fret-3-5-twh-of-curtailments-in-2026/"
+  confidence: sourced
+  notes: "Τρεις από τις τέσσερις συστημικές ρωτήθηκαν και αρνήθηκαν, λόγω έλλειψης έργων αναφοράς και φόβου ότι τα κέρδη θα σταθεροποιηθούν μετά το 2030. Αντίβαρο: το energypress αναφέρει αργότερα 'πρώτο κύμα' υπογεγραμμένων συμβάσεων για μπαταρίες σε εν λειτουργία Φ/Β, για μικρά έργα περίπου 8 MW και μεσαία 80 έως 100 MW (απόσπασμα αναζήτησης, το άρθρο έδωσε 403). Βασικό κριτήριο το IRR του έργου μετά την προσθήκη (PowerGame)."
+
+- id: CAND-120
+  domain: market_fact
+  name: greece_wholesale_price_outlook_aurora
+  description: "Μέση χονδρεμπορική τιμή Ελλάδας έως το 2029 κατά Aurora"
+  unit: "EUR/MWh"
+  low: null
+  central: 100
+  high: null
+  as_of: "2026-08"
+  source: "Aurora Energy Research, μέσω ESS News (11 Αυγ. 2026)"
+  url: "https://www.ess-news.com/2026/08/11/standalone-bess-to-offer-up-to-12-returns-in-greece-aurora-forecasts/"
+  confidence: sourced
+  notes: "Το φυσικό αέριο καλύπτει έως 45% της ελληνικής ηλεκτροπαραγωγής. Σενάριο πλήρους διακοπής ρωσικού αερίου: +27% τιμές αερίου, +13% τιμές βάσης έως το 2028. Η έρευνα αγοράς και τιμών είναι άλλου πακέτου, εδώ μόνο ως πλαίσιο."

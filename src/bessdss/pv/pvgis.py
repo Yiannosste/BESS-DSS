@@ -107,8 +107,8 @@ def to_quarter_hour(hourly: pd.Series) -> pd.Series:
     centres.index = s.index + pd.Timedelta(minutes=30)
     target = idx15 + pd.Timedelta(minutes=7.5)
     x = np.interp(
-        target.asi8.astype(float),
-        centres.index.asi8.astype(float),
+        target.as_unit("s").asi8.astype(float),
+        centres.index.as_unit("s").asi8.astype(float),
         centres.to_numpy(),
     )
     x = np.clip(x, 0.0, None).reshape(-1, 4)

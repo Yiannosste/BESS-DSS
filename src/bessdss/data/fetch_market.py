@@ -303,6 +303,7 @@ def _parse_henex_summary(content: bytes) -> tuple[dt.date, list[float]] | None:
         wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     try:
         ws = wb.worksheets[0]
+        ws.reset_dimensions()  # some workbooks declare a wrong sheet dimension (A1:A1)
         day: dt.date | None = None
         in_price_block = False
         for row in ws.iter_rows(min_row=1, max_row=14, values_only=True):
@@ -698,10 +699,22 @@ def _admie_collect(
         except Exception as exc:  # one broken workbook must not stop the run
             return name, None, f"{type(exc).__name__}: {exc}"
 
-    new_frames: list[pd.DataFrame] = []
-    if todo:
-        with cf.ThreadPoolExecutor(max_workers=workers) as pool:
-            for i, (name, frame, err) in enumerate(pool.map(work, todo), 1):
+    def checkpoint(frames: list[pd.DataFrame]) -> None:
+        nonlocal cache
+        if frames:
+            cache = pd.concat([cache, *frames], ignore_index=True)
+            parsed_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = parsed_path.with_suffix(".tmp")
+            cache.to_parquet(tmp, index=False, compression="zstd")
+            tmp.replace(parsed_path)
+        failed_path.parent.mkdir(parents=True, exist_ok=True)
+        failed_path.write_text(json.dumps(failed, indent=1, ensure_ascii=False), encoding="utf-8")
+
+    chunk = 400  # the parsed cache is saved after every chunk so an interrupted run can resume
+    with cf.ThreadPoolExecutor(max_workers=workers) as pool:
+        for lo in range(0, len(todo), chunk):
+            new_frames: list[pd.DataFrame] = []
+            for name, frame, err in pool.map(work, todo[lo : lo + chunk]):
                 if err:
                     failed[name] = err
                     log.warning("ADMIE %s: %s -> %s", category, name, err)
@@ -710,14 +723,8 @@ def _admie_collect(
                     frame = frame.copy()
                     frame["src_file"] = name
                     new_frames.append(frame)
-                if i % 250 == 0:
-                    log.info("ADMIE %s: %d/%d", category, i, len(todo))
-        if new_frames:
-            cache = pd.concat([cache, *new_frames], ignore_index=True)
-            parsed_path.parent.mkdir(parents=True, exist_ok=True)
-            cache.to_parquet(parsed_path, index=False, compression="zstd")
-        failed_path.parent.mkdir(parents=True, exist_ok=True)
-        failed_path.write_text(json.dumps(failed, indent=1, ensure_ascii=False), encoding="utf-8")
+            checkpoint(new_frames)
+            log.info("ADMIE %s: %d/%d", category, min(lo + chunk, len(todo)), len(todo))
     if not keep_raw and raw_dir.exists() and not any(raw_dir.iterdir()):
         raw_dir.rmdir()
     if not len(cache):
@@ -738,7 +745,13 @@ def _market_sequence(first_local: Any, n: int, step_min: int) -> pd.DatetimeInde
 
 
 def _read_excel_any(content: bytes, name: str, **kwargs: Any) -> pd.DataFrame:
-    engine = "xlrd" if name.lower().endswith(".xls") else "openpyxl"
+    # trust the content, not the extension: ADMIE serves many xlsx files named *.xls
+    if content[:2] == b"PK":
+        engine = "openpyxl"
+    elif content[:4] == b"\xd0\xcf\x11\xe0":
+        engine = "xlrd"
+    else:
+        engine = "xlrd" if name.lower().endswith(".xls") else "openpyxl"
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return pd.read_excel(io.BytesIO(content), engine=engine, **kwargs)
@@ -847,6 +860,7 @@ def _parse_isp_results(content: bytes, name: str) -> pd.DataFrame | None:
         wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     try:
         ws = wb.worksheets[0]
+        ws.reset_dimensions()  # some workbooks declare a wrong sheet dimension (A1:A1)
         times: list[dt.datetime] = []
         cols: list[int] = []
         data: dict[str, list[float]] = {}
@@ -1017,7 +1031,8 @@ _IRENA_TECH = {
     "Total Renewable": "total_renewable",
     "Total Non-Renewable": "total_non_renewable",
 }
-_RESMV_TECH = {"b/a": "wind", "μυησ": "small_hydro", "σηθυα": "chp", "φ/β": "pv", "βιοα": "biogas_biomass"}
+_RESMV_TECH = {"β/α": "wind", "μυησ": "small_hydro", "σηθυα": "chp", "φ/β": "pv", "βιο": "biogas_biomass"}
+_GREEK_FOLD = str.maketrans({"ς": "σ", "b": "β", "a": "α", "ά": "α", "ύ": "υ", "ή": "η", "ί": "ι", "ό": "ο", "έ": "ε"})
 
 
 def _capacity_energy_charts() -> pd.DataFrame:
@@ -1125,9 +1140,10 @@ def _parse_resmv(content: bytes, name: str) -> pd.DataFrame | None:
     keep = day.notna()
     out = pd.DataFrame({"day": day[keep].to_numpy(), "hour": pd.to_numeric(body.iloc[:, 1][keep], errors="coerce").to_numpy()})
     for idx, label in enumerate(header):
+        folded = label[:6].translate(_GREEK_FOLD)  # e.g. Latin "B/A" and Greek "Β/Α" are both used
         for key, tech in _RESMV_TECH.items():
-            if label.startswith(key):
-                kind = "inst_mw" if ("ισχ" in label or "kw" == label.split()[-1] and "εγκ" in label) else "mwh"
+            if folded.startswith(key):
+                kind = "inst_mw" if "ισχ" in label else "mwh"  # "ΕΓΚ ΙΣΧΥΣ KW" vs "ΕΝΕΡΓΕΙΑ KWh"
                 out[f"{tech}_{kind}"] = pd.to_numeric(body.iloc[:, idx][keep], errors="coerce").to_numpy() / 1000.0
     return out if len(out.columns) > 2 else None
 
@@ -1225,6 +1241,77 @@ def fetch_installed_capacity() -> pd.DataFrame:
     return out
 
 
+def _parse_scada_realization(content: bytes, name: str) -> dict[str, float] | None:
+    """Daily energy (MWh) of HV-connected PV and of all HV RES from a SystemRealizationSCADA file.
+
+    In the block of RES stations the photovoltaic stations carry the suffix
+    ``(PV)``; ``TOTAL RES`` is the sum of all telemetered stations connected to
+    the transmission system.  The last numeric cell of each row is the day sum.
+    """
+    raw = _read_excel_any(content, name, sheet_name="System_Production", header=None)
+    labels = raw.iloc[:, 1].astype(str).str.strip()
+
+    def day_sum(row: pd.Series) -> float:
+        vals = pd.to_numeric(row.iloc[2:], errors="coerce").dropna()
+        return float(vals.iloc[-1]) if len(vals) else float("nan")
+
+    pv_rows = raw[labels.str.endswith("(PV)")]
+    total = raw[labels == "TOTAL RES"]
+    if total.empty:
+        return None
+    return {
+        "hv_pv_mwh": float(sum(day_sum(r) for _, r in pv_rows.iterrows())) if len(pv_rows) else 0.0,
+        "hv_res_total_mwh": day_sum(total.iloc[0]),
+        "hv_pv_stations": float(len(pv_rows)),
+    }
+
+
+def check_pv_definition(days: Iterable[dt.date]) -> pd.DataFrame:
+    """Compare ENTSO-E "Solar" for Greece with ADMIE metering for sample days.
+
+    For each day: daily energy of ENTSO-E solar (``system_gr.parquet``), of the
+    PV stations connected to the transmission system (SystemRealizationSCADA)
+    and of the MV distribution-connected PV (RESMV).  LV rooftop PV is not
+    metered in any open ADMIE file.  Result: ``pv_definition_check.csv``.
+    """
+    days = sorted(set(days))
+    mv = fetch_resmv(days)
+    mv_day = mv.groupby(pd.to_datetime(mv["day"]).dt.date)[["pv_mwh", "pv_inst_mw"]].agg({"pv_mwh": "sum", "pv_inst_mw": "max"})
+    listing = {
+        dt.datetime.strptime(i["file_fromdate"], "%d.%m.%Y").date(): i
+        for i in _admie_latest(_admie_listing_chunked("SystemRealizationSCADA", min(days), max(days)))
+        if i["file_path"].lower().endswith((".xls", ".xlsx"))
+    }
+    system = pd.read_parquet(PROCESSED_DIR / "system_gr.parquet").set_index("ts_utc")["pv_mw"]
+    local = system.tz_convert("Europe/Athens")
+    rows = []
+    for day in days:
+        rec: dict[str, Any] = {"day": f"{day:%Y-%m-%d}"}
+        item = listing.get(day)
+        if item is not None:
+            name = item["file_path"].rsplit("/", 1)[-1]
+            path = RAW_DIR / "admie" / "SystemRealizationSCADA" / name
+            content = _cached_bytes(item["file_path"], path, ok_404=True)
+            if content is not None:
+                try:
+                    rec.update(_parse_scada_realization(content, name) or {})
+                except Exception as exc:
+                    log.warning("SCADA %s: %s", name, exc)
+                path.unlink(missing_ok=True)
+        if day in mv_day.index:
+            rec["mv_pv_mwh"] = float(mv_day.loc[day, "pv_mwh"])
+            rec["mv_pv_inst_mw"] = float(mv_day.loc[day, "pv_inst_mw"])
+        sel = local[local.index.date == day]
+        rec["entsoe_solar_mwh"] = float(sel.sum()) if sel.notna().sum() >= 23 else float("nan")
+        rows.append(rec)
+    out = pd.DataFrame(rows)
+    if {"hv_pv_mwh", "mv_pv_mwh"} <= set(out.columns):
+        out["admie_hv_plus_mv_pv_mwh"] = out["hv_pv_mwh"] + out["mv_pv_mwh"]
+        out["entsoe_over_admie"] = out["entsoe_solar_mwh"] / out["admie_hv_plus_mv_pv_mwh"]
+    out.round(3).to_csv(PROCESSED_DIR / "pv_definition_check.csv", index=False)
+    return out
+
+
 # --------------------------------------------------------------------------- 6. fuel prices
 def _world_bank_monthly() -> pd.DataFrame:
     """World Bank Pink Sheet monthly: 'Natural gas, Europe' in USD/mmbtu (TTF since 2015-04)."""
@@ -1287,16 +1374,21 @@ def _eex_eua_auctions(first_year: int = 2012) -> pd.DataFrame:
         header = [re.sub(r"\s+", " ", str(c)).strip() for c in raw.iloc[header_row].tolist()]
         body = raw.iloc[header_row + 1 :]
 
-        def col(prefix: str, header: list[str] = header, body: pd.DataFrame = body) -> pd.Series:
-            idx = next(i for i, h in enumerate(header) if h.lower().startswith(prefix))
-            return body.iloc[:, idx]
+        def col(prefix: str, header: list[str] = header, body: pd.DataFrame = body) -> pd.Series | None:
+            idx = next((i for i, h in enumerate(header) if h.lower().startswith(prefix)), None)
+            return None if idx is None else body.iloc[:, idx]
 
+        date, name, price, status = col("date"), col("auction name"), col("auction price"), col("status")
+        if date is None or name is None or price is None:
+            log.warning("EEX auction report %s: expected columns not found", year)
+            continue
         df = pd.DataFrame(
             {
-                "date": pd.to_datetime(col("date"), errors="coerce"),
-                "auction_name": col("auction name").astype(str),
-                "status": col("status").astype(str).str.lower(),
-                "eua_auction_price_eur_t": pd.to_numeric(col("auction price"), errors="coerce"),
+                "date": pd.to_datetime(date, errors="coerce"),
+                "auction_name": name.astype(str),
+                # reports before 2018 have no status column: a clearing price means success
+                "status": status.astype(str).str.lower() if status is not None else "successful",
+                "eua_auction_price_eur_t": pd.to_numeric(price, errors="coerce"),
             }
         ).dropna(subset=["date", "eua_auction_price_eur_t"])
         frames.append(df)
