@@ -94,7 +94,7 @@
 
 ## 4. Κάλυψη των requirements
 
-78 tests, όλα περνούν τοπικά και στο GitHub Actions (Python 3.11 και 3.13).
+79 tests, όλα περνούν τοπικά και στο GitHub Actions (Python 3.11 και 3.13).
 
 | ID | Test | Κατάσταση |
 |:-|:-|:-|

@@ -125,3 +125,20 @@ def test_reproducible_paths():
     assert np.array_equal(a.scen_idx, b.scen_idx) and np.array_equal(a.weather_idx, b.weather_idx)
     assert np.allclose(a.capture, b.capture) and np.allclose(a.model_err, b.model_err) and np.allclose(a.capex_mult, b.capex_mult)
     assert not np.array_equal(a.scen_idx, PathSet.sample(ctx, 500, seed=8).scen_idx)
+
+
+def test_report_builds_from_saved_results(tmp_path):
+    """The Greek report can be rebuilt from a saved results.json (no simulation needed)."""
+    import json
+    import shutil
+
+    from bessdss.report.build import build_report
+
+    src = ROOT / "docs" / "example_studies" / "park_a" / "results.json"
+    if not src.exists():
+        pytest.skip("example study not in this checkout")
+    shutil.copy(src, tmp_path / "results.json")
+    out = build_report(json.loads(src.read_text(encoding="utf-8")), tmp_path)
+    html = out.read_text(encoding="utf-8")
+    assert "Μελέτη μπαταρίας" in html and "Ρυθμιστικός έλεγχος" in html
+    assert html.count("<img") >= 8
