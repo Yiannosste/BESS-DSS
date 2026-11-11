@@ -95,6 +95,7 @@ finance_overrides: {} # προαιρετικά: π.χ. {capex_subsidy_frac: 0.3,
 ## Αναπαραγωγή από την αρχή
 
 ```bash
+pip install -e ".[data,experiments,benchmark]"   # επιπλέον πακέτα για λήψη δεδομένων, πειράματα και PySAM
 python scripts/fetch_market_data.py        # δεδομένα αγοράς (35 έως 45 λεπτά την πρώτη φορά)
 python scripts/fetch_nasa_power.py         # ακτινοβολία 2015 έως σήμερα
 python scripts/fetch_pvgis_points.py       # παραγωγή ΦΒ σε 8 περιοχές
@@ -117,4 +118,4 @@ python scripts/merge_regulatory.py && python scripts/build_docs.py   # έγγρ�
 
 ## Άδεια κώδικα
 
-MIT. Τα δεδομένα τρίτων έχουν τις δικές τους άδειες (βλ. `docs/DATA_PROVENANCE.md`).
+Προτείνεται MIT (έτσι δηλώνεται στο `pyproject.toml`). Η τελική επιλογή και το αρχείο LICENSE ανήκουν στον ιδιοκτήτη του repository. Τα δεδομένα τρίτων έχουν τις δικές τους άδειες (βλ. `docs/DATA_PROVENANCE.md`).

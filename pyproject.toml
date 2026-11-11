@@ -25,7 +25,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.4"]
 benchmark = ["NREL-PySAM>=7.0"]
-ui = ["streamlit>=1.36"]
+data = ["xlrd>=2.0", "openpyxl>=3.1"]
+experiments = ["scikit-learn>=1.4"]
 
 [project.scripts]
 bessdss = "bessdss.cli:main"
