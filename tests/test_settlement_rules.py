@@ -40,20 +40,28 @@ def test_fit_is_flat_and_expires():
     y = _day([10, -5, 80], [1, 1, 0])
     s = SupportScheme(kind="fit", price_eur_mwh=200, end_year=2030)
     r_pv, r_dis = remuneration(s, RegulatoryConfig(), y, 2027)
-    assert np.allclose(r_pv, 200) and np.allclose(r_dis, 200)
+    assert np.allclose(r_pv, 200)
+    assert np.allclose(r_dis, [10, -5, 80])  # battery output is paid at market price (REG-A-006)
+    _, r_dis2 = remuneration(s, RegulatoryConfig(stored_energy_support="support_price"), y, 2027)
+    assert np.allclose(r_dis2, 200)
     r_pv, _ = remuneration(s, RegulatoryConfig(), y, 2031)
     assert np.allclose(r_pv, [10, -5, 80])  # after the contract the park is merchant
 
 
 def test_fip_sliding_premium_and_negative_price_rule():
-    """Reference price 65, monthly PV reference market price 40: premium 25 on top of the market,
-    except in intervals with price <= 0 where no aid is paid."""
-    y = _day([30, 0, -10, 100], [1, 1, 1, 0], ref=40)
+    """Reference price 65, monthly PV reference market price 40: premium 25 on top of the market.
+    Rule in force (REG-B-014): no aid when the hourly price is negative for MORE than two hours in a row.
+    A zero price or a two-hour negative spell keeps the aid."""
     s = SupportScheme(kind="fip", price_eur_mwh=65)
+    y = _day([30, 0, -10, -10, 100, -5, -5, -5, 100], [1] * 9, ref=40)
     r_pv, _ = remuneration(s, RegulatoryConfig(), y, 2027)
-    assert np.allclose(r_pv, [55, 0, -10, 125])
-    r_pv2, _ = remuneration(s, RegulatoryConfig(negative_price_rule="support_always"), y, 2027)
-    assert np.allclose(r_pv2, [55, 25, 15, 125])
+    assert np.allclose(r_pv, [55, 25, 15, 15, 125, -5, -5, -5, 125])
+    reg3 = RegulatoryConfig(negative_episode_scope="from_third_hour")
+    assert np.allclose(remuneration(s, reg3, y, 2027)[0], [55, 25, 15, 15, 125, 20, 20, -5, 125])
+    strict = RegulatoryConfig(negative_price_rule="nonpositive_all")
+    assert np.allclose(remuneration(s, strict, y, 2027)[0], [55, 0, -10, -10, 125, -5, -5, -5, 125])
+    none = RegulatoryConfig(negative_price_rule="none")
+    assert np.allclose(remuneration(s, none, y, 2027)[0], [55, 25, 15, 15, 125, 20, 20, 20, 125])
 
 
 def test_fip_two_way_premium_can_be_negative():
@@ -85,18 +93,66 @@ def test_fit_battery_only_earns_from_rescued_energy():
     base2 = simulate_pv_only(park, reg, y2, 2027)
     with_b2 = simulate_with_battery(park, reg, y2, 2027, dp, lookahead_days=0)
     assert base2.revenue_eur == pytest.approx(200)
-    assert with_b2.revenue_eur - base2.revenue_eur == pytest.approx(1.0 * 0.95 * 0.95 * 200)
+    # rule in force (REG-A-006): rescued energy leaves the battery at the MARKET price (150), not the tariff
+    assert with_b2.revenue_eur - base2.revenue_eur == pytest.approx(1.0 * 0.95 * 0.95 * 150)
 
 
-def test_fit_battery_with_market_price_rule_changes_value():
-    """If stored energy is paid the market price instead of the tariff, rescue is worth less."""
+def test_fit_battery_alternative_reading_support_price():
+    """Alternative reading: if stored energy kept the tariff, rescue would be worth the tariff."""
     park = _park("fit", 200)
     y = _day([10, 10, 150, 150], [1, 1, 0, 0], curt=[0.5, 0.5, 0, 0])
     dp = DispatchParams(1, 2, 0.95, 0.95)
-    reg = RegulatoryConfig(stored_energy_support="market_price")
+    reg = RegulatoryConfig(stored_energy_support="support_price")
     base = simulate_pv_only(park, reg, y, 2027)
     res = simulate_with_battery(park, reg, y, 2027, dp, lookahead_days=0)
-    assert res.revenue_eur - base.revenue_eur == pytest.approx(1.0 * 0.95 * 0.95 * 150)
+    assert res.revenue_eur - base.revenue_eur == pytest.approx(1.0 * 0.95 * 0.95 * 200)
+
+
+def test_11a_static_cap_and_no_grid_charging():
+    """11A: injection limited to 60 % of installed PV power between 07:00 and 19:00 local time."""
+    from bessdss.dispatch.simulate import static_cap_mw
+
+    park = _park("merchant")
+    reg = RegulatoryConfig()
+    hours = np.arange(24.0)
+    cap = static_cap_mw(park, reg, hours, with_battery=True)
+    assert np.allclose(cap[7:19], 0.6) and np.allclose(cap[:7], 1.0) and np.allclose(cap[19:], 1.0)
+    assert np.allclose(static_cap_mw(park, reg, hours, with_battery=False), 1.0)
+    assert np.allclose(static_cap_mw(park, RegulatoryConfig(cap_11a_frac_of_installed=0.4), hours, True)[12], 0.4)
+    assert reg.grid_charging_allowed is False
+    # the cap costs energy: with a full-power noon and a tiny battery, PV above 60 % is lost
+    y = YearInputs(1.0, np.array([0, 1, 1, 0.0]), np.array([50, 50, 50, 50.0]), np.zeros(4), local_hour=np.array([11, 12, 13, 20.0]), steps_per_day=4)
+    base = simulate_pv_only(park, reg, y, 2027)
+    res = simulate_with_battery(park, reg, y, 2027, DispatchParams(0.1, 0.1, 1.0, 1.0), lookahead_days=0)
+    assert base.revenue_eur == pytest.approx(100)
+    assert res.revenue_eur == pytest.approx((0.6 + 0.6 + 0.1) * 50)
+
+
+def test_11b_profile_and_loss_of_support():
+    """11B: zero injection 11:00 to 15:00, grid charging allowed, operating aid lost."""
+    from bessdss.dispatch.simulate import effective_support_kind, static_cap_mw
+
+    park = _park("fip", 65)
+    reg = RegulatoryConfig(station_category="11B")
+    cap = static_cap_mw(park, reg, np.arange(24.0), with_battery=True)
+    assert np.allclose(cap[11:15], 0.0) and cap[9] == pytest.approx(0.7) and cap[10] == pytest.approx(0.35) and cap[20] == 1.0
+    assert reg.grid_charging_allowed is True
+    assert effective_support_kind(park, reg, 2027, with_battery=True) == "merchant"
+    assert effective_support_kind(park, reg, 2027, with_battery=False) == "fip"
+
+
+def test_eligibility_cutoff_for_supported_parks():
+    """A supported park commissioned before 04.07.2019 does not keep its aid as 11A (default reading)."""
+    from bessdss.dispatch.simulate import effective_support_kind
+
+    old = _park("fit", 250, commissioning_year=2012)
+    new = _park("fip", 65, commissioning_year=2021)
+    reg = RegulatoryConfig()
+    assert effective_support_kind(old, reg, 2027, True) == "merchant"
+    assert effective_support_kind(new, reg, 2027, True) == "fip"
+    alt = RegulatoryConfig(pre2019_supported_park_eligible_11a=True)
+    assert effective_support_kind(old, alt, 2027, True) == "fit"
+    assert effective_support_kind(new, reg, 2027, True, coupling="dc") == "merchant"
 
 
 def test_curtailment_blocks_discharge_too():

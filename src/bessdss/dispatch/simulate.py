@@ -31,10 +31,21 @@ class YearInputs:
     curtail_frac: np.ndarray  # share of the park's potential output it is ordered to shed (0..1)
     pv_ref_price_monthly: np.ndarray | None = None  # per interval: monthly PV market reference price (ΕΤΑ), for FiP
     steps_per_day: int | None = None
+    local_hour: np.ndarray | None = None  # hour of day in Greek local time at interval start (for legal time windows)
 
     def __post_init__(self):
         if self.steps_per_day is None:
             self.steps_per_day = int(round(24.0 / self.dt_h))
+        if self.local_hour is None:  # default: UTC+2, series starting at 00:00 UTC
+            self.local_hour = (np.arange(len(self.price)) * self.dt_h + 2.0) % 24.0
+
+
+def greek_local_hour(year: int, n_steps: int, dt_h: float) -> np.ndarray:
+    """Hour of day in Europe/Athens for a UTC grid starting on 1 January of `year` (handles DST)."""
+    import pandas as pd
+
+    idx = pd.date_range(f"{year}-01-01", periods=n_steps, freq=pd.Timedelta(hours=dt_h), tz="UTC").tz_convert("Europe/Athens")
+    return (idx.hour + idx.minute / 60.0).to_numpy(float)
 
 
 @dataclass
@@ -58,24 +69,81 @@ class YearResult:
     milp_days: int = 0
 
 
+def effective_support_kind(park: Park, reg: RegulatoryConfig, year: int, with_battery: bool, coupling: str = "ac") -> str:
+    """Which remuneration regime applies to the park in a given year.
+
+    Without a battery: the park's own contract until it expires, then merchant.
+    With a battery (art. 11Γ ν. 4685/2020):
+      * 11B: operating aid (FiT, FiP) is lost, the park is merchant (REG-A-005). A PPA is a private
+        contract and stays.
+      * 11A: aid is kept only for parks commissioned after the cut-off date (REG-A-001). For older
+        supported parks the law is silent (REG-A-002): by default the aid is treated as lost.
+      * DC coupling behind a common inverter: aid treated as lost unless the switch says otherwise
+        (REG-A-026, unclear).
+    """
+    kind = park.support.kind
+    if park.support.end_year is not None and year > park.support.end_year:
+        kind = "merchant"
+    if not with_battery or kind in ("merchant", "ppa"):
+        return kind
+    if reg.station_category == "11B":
+        return "merchant"
+    if park.commissioned <= reg.eligibility_commissioning_after and not reg.pre2019_supported_park_eligible_11a:
+        return "merchant"
+    if coupling == "dc" and not reg.dc_coupling_keeps_support:
+        return "merchant"
+    return kind
+
+
+def aid_suspended(price: np.ndarray, dt_h: float, reg: RegulatoryConfig) -> np.ndarray:
+    """Intervals in which the sliding premium is not paid because of the negative price rule."""
+    p = np.asarray(price, float)
+    if reg.negative_price_rule == "none":
+        return np.zeros(len(p), bool)
+    if reg.negative_price_rule == "nonpositive_all":
+        return p <= 0.0
+    # negative for more than two consecutive hours, judged on the hourly average price
+    sph = int(round(1.0 / dt_h))
+    n_h = len(p) // sph
+    hourly = p[: n_h * sph].reshape(n_h, sph).mean(axis=1)
+    neg = hourly < 0.0
+    out_h = np.zeros(n_h, bool)
+    i = 0
+    while i < n_h:
+        if neg[i]:
+            j = i
+            while j < n_h and neg[j]:
+                j += 1
+            if j - i > 2:
+                start = i if reg.negative_episode_scope == "whole_episode" else i + 2
+                out_h[start:j] = True
+            i = j
+        else:
+            i += 1
+    out = np.zeros(len(p), bool)
+    out[: n_h * sph] = np.repeat(out_h, sph)
+    return out
+
+
 def remuneration(
-    scheme: SupportScheme, reg: RegulatoryConfig, y: YearInputs, year: int
+    scheme: SupportScheme, reg: RegulatoryConfig, y: YearInputs, year: int, kind: str | None = None
 ) -> tuple[np.ndarray, np.ndarray]:
     """EUR/MWh paid for (a) PV energy exported directly and (b) energy discharged from the battery.
 
     merchant  both get the day-ahead price.
     ppa       PV gets the PPA price; battery output gets the PPA price only if the contract says so.
-    fit       PV gets the tariff. Battery output gets the tariff or the market price (regulatory switch).
+    fit       PV gets the tariff.
     fip       sliding premium: market price + (reference price - monthly PV reference market price).
-              The premium is two-way (negative when the market is above the reference price).
-    Negative price rule: in intervals with price <= 0 the operating aid is not paid, the park
-    receives the (non-positive) market price only.
+              The premium is two-way (negative when the market is above the reference price) and
+              is suspended by the negative price rule.
+    Battery output of a supported park is paid at market prices through its own meter (REG-A-006),
+    unless the regulatory switch is set to the alternative reading.
     """
     p = np.asarray(y.price, float)
-    kind = scheme.kind
-    if scheme.end_year is not None and year > scheme.end_year:
-        kind = "merchant"
-    nonpos = p <= 0.0
+    if kind is None:
+        kind = scheme.kind
+        if scheme.end_year is not None and year > scheme.end_year:
+            kind = "merchant"
     if kind == "merchant":
         return p.copy(), p.copy()
     if kind == "ppa":
@@ -84,21 +152,42 @@ def remuneration(
         return r_pv, r_dis
     if kind == "fit":
         r_pv = np.full_like(p, scheme.price_eur_mwh)
-        if reg.fit_exposed_to_negative_price_rule and reg.negative_price_rule == "no_support_when_nonpositive":
-            r_pv = np.where(nonpos, np.minimum(p, 0.0), r_pv)
+        if reg.fit_exposed_to_negative_price_rule:
+            r_pv = np.where(aid_suspended(p, y.dt_h, reg), np.minimum(p, 0.0), r_pv)
         r_dis = r_pv.copy() if reg.stored_energy_support == "support_price" else p.copy()
         return r_pv, r_dis
     if kind == "fip":
         if y.pv_ref_price_monthly is None:
             raise ValueError("FiP settlement needs the monthly PV reference market price (pv_ref_price_monthly)")
         premium = scheme.price_eur_mwh - np.asarray(y.pv_ref_price_monthly, float)
-        with_aid = p + premium
-        if reg.negative_price_rule == "no_support_when_nonpositive":
-            with_aid = np.where(nonpos, p, with_aid)
+        with_aid = np.where(aid_suspended(p, y.dt_h, reg), p, p + premium)
         r_pv = with_aid
         r_dis = with_aid.copy() if reg.stored_energy_support == "support_price" else p.copy()
         return r_pv, r_dis
     raise ValueError(kind)
+
+
+def static_cap_mw(park: Park, reg: RegulatoryConfig, local_hour: np.ndarray, with_battery: bool) -> np.ndarray:
+    """Permanent injection limit at the connection point per interval (MW), before curtailment orders.
+
+    No battery: the park's existing cap (REG-A-010).
+    11A: share of the installed PV power between 07:00 and 19:00 local time, full power at night (REG-A-009).
+    11B: hourly profile with zero injection around noon (REG-A-011).
+    """
+    export = park.grid_export_limit_kw / 1000.0
+    installed = park.installed_power_mw(reg.installed_power_basis)
+    h = np.asarray(local_hour, float)
+    if not with_battery:
+        cap = export if park.static_injection_cap_frac >= 1.0 else min(export, park.static_injection_cap_frac * installed)
+        return np.full(len(h), cap)
+    if reg.station_category == "11A":
+        lo, hi = reg.cap_11a_window_local
+        day = (h >= lo) & (h < hi)
+        return np.where(day, min(export, reg.cap_11a_frac_of_installed * installed), export)
+    cap = np.full(len(h), export)
+    for lo, hi, frac in reg.cap_11b_profile_local:
+        cap = np.where((h >= lo) & (h < hi), frac * export, cap)
+    return cap
 
 
 def _pv_available(park: Park, coupling: str, pv_dc: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -114,9 +203,10 @@ def _pv_available(park: Park, coupling: str, pv_dc: np.ndarray) -> tuple[np.ndar
 
 def simulate_pv_only(park: Park, reg: RegulatoryConfig, y: YearInputs, year: int) -> YearResult:
     """The park as it is today, no battery."""
-    r_pv, _ = remuneration(park.support, reg, y, year)
+    kind = effective_support_kind(park, reg, year, with_battery=False)
+    r_pv, _ = remuneration(park.support, reg, y, year, kind)
     ac, clipped = _pv_available(park, "ac", y.pv_dc_mw)
-    cap = np.minimum(park.grid_export_limit_kw / 1000.0, ac * (1.0 - _order(park, reg, y)))
+    cap = np.minimum(static_cap_mw(park, reg, y.local_hour, False), ac * (1.0 - _order(park, reg, y)))
     e = np.where(r_pv >= 0, np.minimum(ac, cap), 0.0)
     lost = ac - e
     rev = float((e * r_pv).sum() * y.dt_h)
@@ -172,14 +262,16 @@ def simulate_with_battery(
     """
     if dp.power_mw <= 0 or dp.energy_usable_mwh <= 0:
         return simulate_pv_only(park, reg, y, year)
-    r_pv, r_dis = remuneration(park.support, reg, y, year)
+    kind = effective_support_kind(park, reg, year, with_battery=True, coupling=dp.coupling)
+    r_pv, r_dis = remuneration(park.support, reg, y, year, kind)
     pv_avail, clipped = _pv_available(park, dp.coupling, y.pv_dc_mw)
     ac_potential = np.minimum(y.pv_dc_mw * park.eta_inverter, park.pv_ac_kw / 1000.0)
     export_limit = park.grid_export_limit_kw / 1000.0
-    cap = np.minimum(export_limit, ac_potential * (1.0 - _order(park, reg, y)))
-    # outside curtailment orders the battery may use the full export limit (also at night)
+    static = static_cap_mw(park, reg, y.local_hour, True)
+    # a curtailment order limits the whole injection to the allowed share of the PV potential;
+    # outside orders the station may use its static limit (also at night, from the battery)
     order = _order(park, reg, y)
-    cap = np.where(order > 0, cap, export_limit)
+    cap = np.where(order > 0, np.minimum(static, ac_potential * (1.0 - order)), static)
     if dp.coupling == "dc":
         cap = np.minimum(cap, park.pv_ac_kw / 1000.0)
     if reg.grid_charging_allowed:

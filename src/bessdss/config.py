@@ -46,6 +46,12 @@ class Park(BaseModel):
     tracking: Literal["fixed", "single_axis"] = "fixed"
     system_loss_pct: float = 14.0
     commissioning_year: int = 2020
+    commissioning_date: str | None = Field(None, description="ISO date; if missing, 1 July of commissioning_year is assumed")
+    static_injection_cap_frac: float = Field(
+        1.0, gt=0, le=1,
+        description="Existing permanent injection cap as share of installed power: 1.0 for parks operating before 04.07.2022, "
+        "0.73 (distribution) or 0.72 (transmission) for later connection offers (REG-A-010)",
+    )
     pv_degradation_per_year: float = 0.005
     grid_operator: Literal["deddie", "admie"] = "deddie"
     voltage_level: Literal["lv", "mv", "hv"] = "mv"
@@ -62,26 +68,66 @@ class Park(BaseModel):
     def dc_ac_ratio(self) -> float:
         return self.pv_dc_kwp / self.pv_ac_kw
 
+    @property
+    def commissioned(self) -> str:
+        return self.commissioning_date or f"{self.commissioning_year}-07-01"
+
+    def installed_power_mw(self, basis: str) -> float:
+        """'Installed power of the PV' under the chosen legal reading, in MW."""
+        return {"pv_dc_kwp": self.pv_dc_kwp, "pv_ac_kw": self.pv_ac_kw, "export_limit": self.grid_export_limit_kw}[basis] / 1000.0
+
 
 class RegulatoryConfig(BaseModel):
-    """Legal switches. Defaults follow the most defensible reading recorded in the regulatory register."""
+    """Legal switches. Every default is the most defensible reading recorded in the regulatory
+    register (registers/regulatory.yaml); the rule ID is given next to each field. Fields marked
+    UNCLEAR have legally plausible alternatives and the study reports the result under each."""
 
-    grid_charging_allowed: bool = Field(False, description="May the battery absorb energy from the grid")
-    import_levies_eur_mwh: float = Field(0.0, description="Regulated charges on energy absorbed from the grid")
-    min_storage_hours: float = Field(1.0, description="Minimum usable energy in hours of the reference power")
-    min_storage_reference: Literal["pv_ac_power", "battery_power", "export_limit"] = "pv_ac_power"
-    max_battery_power_frac_of_export: float | None = Field(1.0, description="Upper limit on battery power relative to export limit")
-    stored_energy_support: Literal["support_price", "market_price"] = Field(
-        "support_price", description="FiT/FiP parks: what the energy discharged from the battery receives"
+    # --- station category after the battery is added (art. 11Γ ν. 4685/2020, REG-A-001, REG-A-003)
+    station_category: Literal["11A", "11B"] = Field(
+        "11A",
+        description="11A: battery charges only from the PV, support contract kept for direct PV energy. "
+        "11B: battery may also charge from the grid, operating aid is lost (REG-A-004, REG-A-005).",
     )
-    negative_price_rule: Literal["no_support_when_nonpositive", "support_always"] = Field(
-        "no_support_when_nonpositive", description="Operating aid in intervals with zero or negative day-ahead price"
+    eligibility_commissioning_after: str = Field("2019-07-04", description="11A with support only for parks commissioned after this date (REG-A-001)")
+    pre2019_supported_park_eligible_11a: bool = Field(False, description="UNCLEAR (REG-A-002): the law is silent on older supported parks")
+    # --- static injection caps
+    cap_11a_frac_of_installed: float = Field(0.60, description="UNCLEAR (REG-A-009): max injection 07:00 to 19:00 as share of installed PV power. Law text says 'restriction 40 %', DEDDIE applies 60 %. Alternative 0.40")
+    cap_11a_window_local: tuple[float, float] = (7.0, 19.0)
+    cap_11b_profile_local: list[tuple[float, float, float]] = Field(
+        default_factory=lambda: [(9, 10, 0.70), (10, 11, 0.35), (11, 15, 0.0), (15, 16, 0.35), (16, 17, 0.70)],
+        description="(from hour, to hour, max injection as share of max injection power), local time (REG-A-011, interim)",
     )
-    fit_exposed_to_negative_price_rule: bool = Field(False, description="Does the negative price rule also hit old FiT contracts")
-    fit_subject_to_curtailment: bool = Field(True, description="Are FiT parks curtailed like the rest")
-    curtailment_compensation_frac: float = Field(0.0, ge=0, le=1, description="Share of curtailed energy that is compensated")
-    balancing_services_allowed: bool = False
-    rule_ids: dict[str, str] = Field(default_factory=dict, description="setting name -> regulatory register ID")
+    installed_power_basis: Literal["pv_dc_kwp", "pv_ac_kw", "export_limit"] = Field(
+        "pv_dc_kwp", description="UNCLEAR: what 'installed power of the PV' means for the cap and the minimum capacity"
+    )
+    # --- sizing rules
+    min_storage_hours: float = Field(1.0, description="Usable energy >= this many hours of installed PV power (REG-A-007)")
+    min_capacity_rule_active: bool = Field(True, description="Industry asked to abolish the rule; not accepted so far (REG-A-008)")
+    max_battery_power_frac_of_export: float = Field(1.0, description="Battery inverter power up to the park's max generation power (REG-A-013, REG-A-014)")
+    # --- remuneration
+    stored_energy_support: Literal["market_price", "support_price"] = Field(
+        "market_price", description="Energy leaving the battery is paid at market prices through its own meter (REG-A-006)"
+    )
+    negative_price_rule: Literal["negative_more_than_2h", "nonpositive_all", "none"] = Field(
+        "negative_more_than_2h",
+        description="Sliding premium: aid not paid when the hourly day-ahead price is negative for more than two consecutive hours (REG-B-014). "
+        "'nonpositive_all' is the stricter reading that EU guidelines point to (REG-B-017).",
+    )
+    negative_episode_scope: Literal["whole_episode", "from_third_hour"] = Field("whole_episode", description="UNCLEAR (REG-B-014)")
+    fit_exposed_to_negative_price_rule: bool = Field(False, description="Fixed tariffs are paid regardless of the market price (REG-B-016)")
+    fit_subject_to_curtailment: bool = Field(True, description="Technical curtailment orders apply to every controllable park (REG-B-019)")
+    curtailment_compensation_frac: float = Field(0.0, ge=0, le=1, description="No compensation mechanism in force (REG-B-023, REG-B-025)")
+    import_levies_eur_mwh: float = Field(0.0, description="11B: no ETMEAR or YKO on energy that is cycled back (REG-A-027)")
+    dc_coupling_keeps_support: bool = Field(False, description="UNCLEAR (REG-A-026): press reports that a common inverter loses the support")
+    balancing_services_allowed: bool = Field(False, description="Not counted for a small distribution-connected park (REG-B-033)")
+    guarantee_eur_per_kw_tiers: list[tuple[float, float]] = Field(
+        default_factory=lambda: [(1000.0, 42.0), (10000.0, 21.0), (100000.0, 14.0), (1e12, 7.0)],
+        description="Letter of guarantee: (upper kW bound of the tier, EUR/kW) on the whole station power (REG-A-020)",
+    )
+
+    @property
+    def grid_charging_allowed(self) -> bool:
+        return self.station_category == "11B"
 
 
 class BatteryOptions(BaseModel):
@@ -94,7 +140,8 @@ class BatteryOptions(BaseModel):
     aux_kw_per_mwh: float = 1.5
     max_cycles_per_year: float | None = 365.0
     eol_soh: float = 0.6
-    degradation_model: Literal["linear", "semi_empirical_lfp"] = "semi_empirical_lfp"
+    degradation_model: Literal["linear", "blast_lfp_gr_250ah"] = "blast_lfp_gr_250ah"
+    pack_life_factor: float = 0.775  # cell-to-pack life derating advised by the model authors (20 to 30 %)
     cell_temp_c: float = 25.0
     durations_h: list[float] = Field(default_factory=lambda: [1.0, 2.0, 3.0, 4.0])
 

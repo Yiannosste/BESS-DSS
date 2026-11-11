@@ -5,10 +5,9 @@ Contents
   * Degradation models (state of health, SoH, as a fraction of nameplate energy):
       - LinearDegradation: constant calendar fade per year plus fade per full equivalent cycle (FEC).
         This is the simple, well-understood baseline.
-      - SemiEmpiricalLFP: calendar fade ~ t^0.5 with Arrhenius temperature and SoC dependence,
-        cycle fade ~ FEC^0.5 scaled by depth of discharge and C-rate. Functional forms follow
-        Naumann et al. (2018, 2020) for an LFP/graphite cell. Coefficients are loaded from the
-        assumptions register so that every number has a source.
+      - BlastLfpGr250Ah: the open NREL BLAST-Lite life model for a large-format LFP/graphite cell
+        (calendar fade ~ t^0.526 with temperature and SoC dependence, cycle fade ~ EFC^0.828 with
+        depth of discharge and average C-rate), with the published coefficients.
   * rainflow_cycles: half-cycle depth extraction from a SoC trace (for depth-dependent models).
 
 Units: energy MWh, power MW, temperature degC, time in years unless stated.
@@ -56,7 +55,7 @@ class BatterySpec:
 class YearUsage:
     """Summary of one year of operation, the interface between dispatch and degradation."""
 
-    fec: float  # full equivalent cycles in the year (discharged energy / nameplate usable energy)
+    fec: float  # full equivalent cycles in the year, on NAMEPLATE energy (sum |dSOC| / 2)
     mean_soc: float = 0.5  # time-average SoC as a fraction of nameplate
     mean_dod: float = 0.8  # throughput-weighted cycle depth (fraction of nameplate)
     mean_c_rate: float = 0.3  # throughput-weighted C-rate (1/h)
@@ -83,70 +82,74 @@ class LinearDegradation:
         return self.kcyc
 
 
-class SemiEmpiricalLFP:
-    """Square-root-of-time calendar fade and square-root-of-throughput cycle fade for LFP.
+class BlastLfpGr250Ah:
+    """Semi-empirical LFP/graphite life model of NREL BLAST-Lite (`Lfp_Gr_250AhPrismatic`).
 
-    Calendar:  q_cal(t) = k_cal(T, SoC) * sqrt(t_seconds)
-               k_cal = k_ref * exp(-Ea/R * (1/T - 1/T_ref)) * (c * (SoC - 0.5)^3 + d)
-    Cycle:     q_cyc(FEC) = k_cyc(DoD, C) * sqrt(FEC * 100) / 100 ... see _kcyc
-    Total capacity loss = q_cal + q_cyc (superposition, as in Naumann et al. 2020).
+    Source: github.com/NREL/BLAST-Lite, file blast/models/lfp_gr_250AhPrismatic_2019.py (BSD-3),
+    fitted on ageing data of a large-format (>250 Ah) prismatic LFP-Gr cell, Gasper et al.,
+    J. Energy Storage 2023, doi 10.1016/j.est.2023.109042. Coefficients are copied from that file.
 
-    Because both terms are concave in their driver, fade must be accumulated in the "virtual
-    time / virtual throughput" domain when conditions change from year to year. That is what
-    simulate() does.
+        q = 1 - qLoss_t - qLoss_EFC
+        qLoss_t   = kcal * t_days^pcal,   kcal = |p1| exp(p2/T) exp(p3 Ua(SOC)/T)
+        qLoss_EFC = kcyc * EFC^pcyc,      kcyc = (p4 + p5 DOD + p6 Crate) (exp(p7/T) + exp(-p8/T))
 
-    Default coefficients are the published fits for a Sony/Murata US26650FTC1 LFP/graphite cell
-    (Naumann et al. 2018 J. Energy Storage 17:153; Naumann et al. 2020 J. Power Sources 451:227666).
-    They are replaced at run time by the values in registers/assumptions.yaml when present.
+    T in kelvin. Crate is the TIME-AVERAGED |dSOC/dt| in 1/h including rests (about 0.083 for one
+    full cycle per day), not the nameplate C-rate. Valid for 10 to 45 degC and DOD 0.8 to 1; outside
+    that range it extrapolates. It is a CELL model: the authors advise 20 to 30 % shorter life at
+    pack level, which is applied here as `pack_life_factor` (time and throughput run faster).
+
+    Conditions change from year to year, so fade is accumulated in the "virtual time" domain:
+    y_new = k * ((y/k)^(1/p) + dx)^p, which is the exact integral of the incremental form in BLAST.
     """
 
-    name = "semi_empirical_lfp"
-    R = 8.314462618  # J/mol/K
+    name = "blast_lfp_gr_250ah"
+    P1, P2, P3, PCAL = 8.37e4, -5.21e3, -3.56e3, 0.526
+    P4, P5, P6, P7, P8, PCYC = 4.38e-8, 1.55e-8, 1.68e-7, 2.19e3, 1.55e5, 0.828
 
-    def __init__(
-        self,
-        k_ref: float = 1.2571e-5,  # 1/sqrt(s) fraction per sqrt(second) at T_ref, SoC reference shape
-        ea_j_per_mol: float = 17126.0,
-        t_ref_k: float = 298.15,
-        c_soc: float = 2.8575,
-        d_soc: float = 0.60225,
-        a_crate: float = 0.0630,
-        b_crate: float = 0.0971,
-        c_dod: float = 4.0253,
-        d_dod: float = 1.0923,
-        cycle_scale: float = 1.0,
-        calendar_scale: float = 1.0,
-    ):
-        self.k_ref, self.ea, self.t_ref = k_ref, ea_j_per_mol, t_ref_k
-        self.c_soc, self.d_soc = c_soc, d_soc
-        self.a_c, self.b_c, self.c_d, self.d_d = a_crate, b_crate, c_dod, d_dod
-        self.cycle_scale, self.calendar_scale = cycle_scale, calendar_scale
+    def __init__(self, pack_life_factor: float = 0.775, degradation_scalar: float = 1.0):
+        self.pack_life_factor = pack_life_factor  # 1.0 = pure cell model
+        self.scalar = degradation_scalar  # sensitivity knob, 1.0 = as published
+
+    @staticmethod
+    def anode_potential(soc: float) -> float:
+        xa = 8.5e-3 + soc * (0.78 - 8.5e-3)
+        return float(
+            0.6379
+            + 0.5416 * np.exp(-305.5309 * xa)
+            + 0.044 * np.tanh(-(xa - 0.1958) / 0.1088)
+            - 0.1978 * np.tanh((xa - 1.0571) / 0.0854)
+            - 0.6875 * np.tanh((xa + 0.0117) / 0.0529)
+            - 0.0175 * np.tanh((xa - 0.5692) / 0.0875)
+        )
 
     def _kcal(self, temp_c: float, soc: float) -> float:
         T = temp_c + 273.15
-        arr = np.exp(-self.ea / self.R * (1.0 / T - 1.0 / self.t_ref))
-        return self.calendar_scale * self.k_ref * arr * (self.c_soc * (soc - 0.5) ** 3 + self.d_soc)
+        return abs(self.P1) * np.exp(self.P2 / T) * np.exp(self.P3 * self.anode_potential(soc) / T)
 
-    def _kcyc(self, dod: float, c_rate: float) -> float:
-        # Naumann 2020: Q_loss,cyc [%] = (a*C + b) * (c*(DoD-0.6)^3 + d) * sqrt(FEC)
-        return self.cycle_scale * (self.a_c * c_rate + self.b_c) * (self.c_d * (dod - 0.6) ** 3 + self.d_d) / 100.0
+    def _kcyc(self, temp_c: float, dod: float, crate: float) -> float:
+        T = temp_c + 273.15
+        return (self.P4 + self.P5 * dod + self.P6 * crate) * (np.exp(self.P7 / T) + np.exp(-self.P8 / T))
+
+    @staticmethod
+    def _advance(y: float, k: float, p: float, dx: float) -> float:
+        if k <= 0 or dx <= 0:
+            return y
+        return k * ((y / k) ** (1.0 / p) + dx) ** p
 
     def simulate(self, usage: list[YearUsage]) -> np.ndarray:
-        sec_per_year = 365.25 * 24 * 3600.0
-        qcal, qcyc = 0.0, 0.0
+        """SoH at the START of each year (length len(usage)+1). usage.fec is in nameplate full cycles."""
+        qt, qe = 0.0, 0.0
         soh = [1.0]
+        f = 1.0 / self.pack_life_factor
         for u in usage:
-            kc = self._kcal(u.cell_temp_c, u.mean_soc)
-            t_virtual = (qcal / kc) ** 2 if kc > 0 else 0.0
-            qcal = kc * np.sqrt(t_virtual + sec_per_year)
-            ky = self._kcyc(u.mean_dod, u.mean_c_rate)
-            fec_virtual = (qcyc / ky) ** 2 if ky > 0 else 0.0
-            qcyc = ky * np.sqrt(fec_virtual + u.fec)
-            soh.append(max(0.0, 1.0 - qcal - qcyc))
+            crate = 2.0 * u.fec / 8760.0  # time-averaged |dSOC/dt|, 1/h
+            qt = self._advance(qt, self._kcal(u.cell_temp_c, u.mean_soc), self.PCAL, 365.0 * f)
+            qe = self._advance(qe, self._kcyc(u.cell_temp_c, u.mean_dod, crate), self.PCYC, u.fec * f)
+            soh.append(max(0.0, 1.0 - self.scalar * (qt + qe)))
         return np.array(soh)
 
     def marginal_fade_per_fec(self, usage: list[YearUsage], year: int, eps: float = 1.0) -> float:
-        """Extra end-of-horizon fade caused by one more FEC in a given year (numerical)."""
+        """Extra end-of-horizon fade caused by one more full cycle in a given year (numerical)."""
         base = self.simulate(usage)[-1]
         bumped = list(usage)
         u = bumped[year]
@@ -194,9 +197,7 @@ def rainflow_cycles(soc: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 def usage_from_trace(soc_frac: np.ndarray, power_frac: np.ndarray, dt_h: float, spec: BatterySpec) -> YearUsage:
     """Summarise a simulated year (SoC and power as fractions of nameplate) for the degradation model."""
-    discharged = np.clip(power_frac, 0, None).sum() * dt_h  # in units of nameplate energy per 1 C
-    window = spec.soc_max - spec.soc_min
-    fec = discharged / window if window > 0 else 0.0
+    fec = np.clip(power_frac, 0, None).sum() * dt_h  # discharged energy in units of nameplate energy
     depths, weights = rainflow_cycles(soc_frac)
     if len(depths) and (depths * weights).sum() > 0:
         mean_dod = float((depths**2 * weights).sum() / (depths * weights).sum())

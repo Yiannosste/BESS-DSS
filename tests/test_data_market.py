@@ -78,7 +78,8 @@ def test_dam_complete_closed_years(dam: pd.DataFrame) -> None:
         assert hours[year] == expected, year
     rows = dam.groupby(dam.index.year).size()
     assert rows[2024] == 8784
-    assert rows[2025] == 6552 + 2208 * 4  # 273 hourly days (UTC) then 92 days of 15 minutes
+    # 2025 (UTC year): 6550 hourly intervals until 2025-09-30 22:00 UTC, then 2210 hours of 15 minutes
+    assert rows[2025] == 6550 + 2210 * 4
 
 
 def test_dam_dst_days(dam: pd.DataFrame) -> None:

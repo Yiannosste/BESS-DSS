@@ -6,7 +6,7 @@ import pytest
 from bessdss.battery.model import (
     BatterySpec,
     LinearDegradation,
-    SemiEmpiricalLFP,
+    BlastLfpGr250Ah,
     YearUsage,
     rainflow_cycles,
 )
@@ -94,17 +94,29 @@ def test_linear_degradation():
     assert soh[-1] == pytest.approx(1 - 10 * (0.01 + 0.03))
 
 
-def test_semi_empirical_monotone_and_concave():
-    m = SemiEmpiricalLFP()
+def test_blast_model_reproduces_reference_points():
+    """Reference SoH values computed with the published coefficients at cell level
+    (25 degC, mean SoC 50 %, constant conditions), see docs/research/finance_battery_tools_notes.md."""
+    m = BlastLfpGr250Ah(pack_life_factor=1.0)
+    assert m.anode_potential(0.5) == pytest.approx(0.1233, abs=2e-4)
+    assert m.anode_potential(0.2) == pytest.approx(0.1805, abs=2e-4)
+    one = m.simulate([YearUsage(fec=365, mean_soc=0.5, mean_dod=0.8)] * 20)
+    assert one[10] == pytest.approx(0.866, abs=0.004)
+    assert one[20] == pytest.approx(0.775, abs=0.004)
+    two = m.simulate([YearUsage(fec=730, mean_soc=0.5, mean_dod=0.9)] * 20)
+    assert two[20] == pytest.approx(0.574, abs=0.006)
+
+
+def test_blast_model_monotone_and_pack_derating():
+    m = BlastLfpGr250Ah(pack_life_factor=1.0)
     soh = m.simulate([YearUsage(fec=300)] * 15)
     assert np.all(np.diff(soh) < 0)
-    # square-root law: yearly losses shrink over time
-    assert np.all(np.diff(np.diff(soh)) > 0)
-    # more cycles, hotter cells and deeper cycles all age the battery faster
+    # more cycles and higher average SoC age the battery faster; a pack ages faster than a cell
     assert m.simulate([YearUsage(fec=600)] * 15)[-1] < soh[-1]
-    assert m.simulate([YearUsage(fec=300, cell_temp_c=40)] * 15)[-1] < soh[-1]
-    assert m.simulate([YearUsage(fec=300, mean_dod=1.0)] * 15)[-1] < soh[-1]
-    assert 0.5 < soh[-1] < 0.95
+    assert m.simulate([YearUsage(fec=300, mean_soc=0.9)] * 15)[-1] < soh[-1]
+    assert BlastLfpGr250Ah(pack_life_factor=0.775).simulate([YearUsage(fec=300)] * 15)[-1] < soh[-1]
+    # changing conditions year by year gives the same result as constant conditions when they are equal
+    assert m.simulate([YearUsage(fec=300)] * 15)[-1] == pytest.approx(soh[-1])
 
 
 def test_rainflow_simple():

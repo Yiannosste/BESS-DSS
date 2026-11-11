@@ -223,11 +223,14 @@ def _ec_price_frame(bzn: str, start_year: int, end_year: int | None) -> pd.DataF
     """Day-ahead price of one bidding zone in native resolution."""
     parts: list[pd.DataFrame] = []
     licence = ""
-    for year in _years(start_year, end_year):
+    years = _years(start_year, end_year)
+    for i, year in enumerate(reversed(years)):  # newest first: an unknown zone fails on the first call
         try:
             data = _ec_year("price", {"bzn": bzn}, year)
         except (requests.HTTPError, RuntimeError) as exc:
-            log.warning("energy-charts price %s %s not available: %s", bzn, year, exc)
+            log.info("energy-charts price %s %s not available: %s", bzn, year, exc)
+            if i == 0:
+                break  # the zone is not served at all: do not spend 12 more requests on it
             continue
         if not data.get("unix_seconds"):
             continue
@@ -591,7 +594,7 @@ def fetch_system(start_year: int = FIRST_YEAR, end_year: int | None = None) -> p
 
 
 def fetch_neighbour_prices(
-    zones: tuple[str, ...] = ("BG", "IT-South", "IT-Brindisi", "IT-Calabria", "MK", "AL", "RO", "TR"),
+    zones: tuple[str, ...] = ("BG", "IT-South", "IT-Calabria", "RO", "MK", "AL", "TR"),
     start_year: int = FIRST_YEAR,
     end_year: int | None = None,
 ) -> pd.DataFrame:
@@ -825,6 +828,9 @@ def fetch_imbalance(
     first = ["ts_utc", "resolution_min", "imbalance_price_eur_mwh", "mfrr_price_up_eur_mwh", "mfrr_price_down_eur_mwh"]
     df = df[first + [c for c in df.columns if c not in first and c != "src_file"] + ["src_file"]]
     df["src_file"] = df["src_file"].astype("category")
+    df["source"] = df["source"].astype("category")
+    floats = df.select_dtypes("float64").columns
+    df[floats] = df[floats].astype("float32")  # 7 significant digits are ample; halves the file size
     _write_parquet(df, PROCESSED_DIR / "imbalance_gr.parquet")
     log.info("imbalance_gr: %d rows %s .. %s", len(df), df.ts_utc.min(), df.ts_utc.max())
     return df
@@ -920,7 +926,16 @@ def fetch_curtailment(
     ISP3 intraday for the second half of the day) plus ``curtail_sched_mw``,
     the value of the latest available run for each period (stored positive).
     """
-    runs = {r: fetch_isp(r, start, end, keep_raw) for r in ("ISP1", "ISP2", "ISP3")}
+    runs = {"ISP1": fetch_isp("ISP1", start, end, keep_raw)}
+    isp1_raw = runs["ISP1"]
+    has_surplus = isp1_raw.dropna(subset=["energy_surplus_mw"]) if "energy_surplus_mw" in isp1_raw.columns else isp1_raw.iloc[:0]
+    if len(has_surplus):
+        # older workbooks have no "Energy Surplus" row, so the later runs add nothing before that day
+        refine_start = max(start, has_surplus["dispatch_day"].min().date())
+        for run in ("ISP2", "ISP3"):
+            runs[run] = fetch_isp(run, refine_start, end, keep_raw)
+    else:
+        runs["ISP2"] = runs["ISP3"] = pd.DataFrame()
     idx = sorted(set().union(*[set(df["ts_utc"]) for df in runs.values() if len(df)]))
     out = pd.DataFrame(index=pd.DatetimeIndex(idx, name="ts_utc"))
     for run, df in runs.items():
@@ -1143,8 +1158,14 @@ def _parse_resmv(content: bytes, name: str) -> pd.DataFrame | None:
         folded = label[:6].translate(_GREEK_FOLD)  # e.g. Latin "B/A" and Greek "Β/Α" are both used
         for key, tech in _RESMV_TECH.items():
             if folded.startswith(key):
-                kind = "inst_mw" if "ισχ" in label else "mwh"  # "ΕΓΚ ΙΣΧΥΣ KW" vs "ΕΝΕΡΓΕΙΑ KWh"
-                out[f"{tech}_{kind}"] = pd.to_numeric(body.iloc[:, idx][keep], errors="coerce").to_numpy() / 1000.0
+                values = pd.to_numeric(body.iloc[:, idx][keep], errors="coerce").to_numpy(dtype="float64")
+                if "ισχ" in label:  # "ΕΓΚ ΙΣΧΥΣ KW": installed power
+                    # Files up to mid 2025 give installed power in MW although the header says kW
+                    # (e.g. 1787 for PV); newer files really are in kW (e.g. 4842381).
+                    in_kw = np.nanmedian(values) > 20000.0 if np.isfinite(values).any() else False
+                    out[f"{tech}_inst_mw"] = values / 1000.0 if in_kw else values
+                else:  # "ΕΝΕΡΓΕΙΑ KWh": hourly energy
+                    out[f"{tech}_mwh"] = values / 1000.0
     return out if len(out.columns) > 2 else None
 
 
