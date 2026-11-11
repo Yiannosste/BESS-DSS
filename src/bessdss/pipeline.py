@@ -117,8 +117,12 @@ def operation_example(ctx: StudyContext, category: str, p: float, e: float) -> d
     pv_ac = np.minimum(yi.pv_dc_mw * park.eta_inverter, park.pv_ac_kw / 1000.0)
     # two typical days: the spring day with most zero-price quarter hours and a median July day
     day = lambda k: slice(96 * k, 96 * k + 96)  # noqa: E731
-    zero_cnt = np.array([(yi.price[day(k)] <= 0.5).sum() for k in range(365)])
-    spring = int(60 + np.argmax(zero_cnt[60:150]))
+    # spring day: many zero-price quarter hours at noon AND a normal evening price (a typical surplus day,
+    # not the most extreme one)
+    zero_cnt = np.array([(yi.price[day(k)][36:64] <= 0.5).sum() for k in range(365)])
+    evening = np.array([yi.price[day(k)][64:84].mean() for k in range(365)])
+    score = np.where(evening > np.median(evening), zero_cnt, 0)
+    spring = int(60 + np.argmax(score[60:150]))
     summer = 196
     days = {}
     for label, k in (("spring_surplus", spring), ("summer", summer), ("winter", 20)):

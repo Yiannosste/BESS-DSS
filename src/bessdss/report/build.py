@@ -240,7 +240,7 @@ h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin:34px 0 8px;border-bott
 .verdict b{font-size:20px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}
 .tile{border:1px solid #e6e5e0;border-radius:8px;padding:10px 12px;background:#fff}.tile .k{color:#52514e;font-size:12.5px}.tile .v{font-size:19px;font-weight:650}
 table{border-collapse:collapse;width:100%;margin:8px 0 14px;font-size:13.5px}th,td{border-bottom:1px solid #e6e5e0;padding:5px 8px;text-align:left;vertical-align:top}
-th{color:#52514e;font-weight:600}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}img{max-width:100%;height:auto}
+th{color:#52514e;font-weight:600}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}img{max-width:100%;height:auto;display:block;margin:10px 0}img.sm{max-width:640px;width:100%}img.md{max-width:760px;width:100%}
 .note{color:#52514e;font-size:13.5px}.st{display:inline-block;min-width:1.4em;text-align:center;font-weight:700}.small{font-size:12.5px;color:#52514e}
 .warnbox{border:1px solid #e6e5e0;border-left:6px solid #9a6700;border-radius:8px;padding:10px 14px;background:#fff;margin:10px 0}
 @media print{body{font-size:12px}h2{break-after:avoid}img{break-inside:avoid}}
@@ -305,13 +305,13 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
     # 3 value
     P.append("<h2>3. Από πού έρχεται η αξία</h2>")
     P.append("<p>Το πρόσθετο έσοδο έχει δύο μέρη. Το πρώτο είναι το κόστος της μετατροπής: το πάρκο γίνεται σταθμός με αποθήκευση και αποκτά μόνιμο όριο έγχυσης (και στην κατηγορία 11Β χάνει την ενίσχυση). Το δεύτερο είναι αυτό που κερδίζει η μπαταρία: ενέργεια που σώζεται από το όριο, από περικοπές και από ώρες μηδενικής τιμής, και μετακίνηση σε ακριβότερες ώρες.</p>")
-    P.append(f"<img src='{fig_decomposition(res)}' alt='Ανάλυση αξίας'>")
+    P.append(f"<img class='sm' src='{fig_decomposition(res)}' alt='Ανάλυση αξίας'>")
     dd = res["design_detail"]
     i = dd["scen_names"].index("central") if "central" in dd["scen_names"] else 0
     rows = [[y, eur(dd["base_rev"][i][k]), eur(dd["penalty"][i][k]), eur(dd["gross"][i][k]), num(dd["discharged"][i][k], 0), num(dd["fec"][i][k], 0), num(dd["lost_base"][i][k], 0), num(dd["lost_with"][i][k], 0)] for k, y in enumerate(dd["rep_years"])]
     P.append(_table(["Έτος", "Έσοδο πάρκου σήμερα", "Κόστος μετατροπής", "Αξία μπαταρίας", "Εκφόρτιση MWh", "Κύκλοι", "Χαμένη ενέργεια χωρίς μπαταρία MWh", "Χαμένη με μπαταρία MWh"], rows, num_cols=range(1, 8)))
-    P.append(f"<img src='{fig_revenue(res)}' alt='Έσοδο ανά έτος'>")
-    P.append(f"<img src='{fig_soh(res)}' alt='Φθορά'>")
+    P.append(f"<img class='sm' src='{fig_revenue(res)}' alt='Έσοδο ανά έτος'>")
+    P.append(f"<img class='sm' src='{fig_soh(res)}' alt='Φθορά'>")
     cyc = max(max(r) for r in dd["cycled_in"])
     if cyc > 5:
         P.append(f"<div class='warnbox'>Σε κάποια έτη η βέλτιστη λειτουργία περνά έως {num(cyc, 0)} MWh τον χρόνο από τη μπαταρία μέσα στο ίδιο 15λεπτο. Αυτό συμβαίνει όταν οι κανόνες το ανταμείβουν (π.χ. αποφυγή της επιστροφής προσαύξησης όταν η αγορά είναι πάνω από την τιμή αναφοράς). Είναι έσοδο που ο ρυθμιστής μπορεί να κλείσει.</div>")
@@ -344,9 +344,9 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
 
     # 6 risk
     P.append("<h2>6. Ανάλυση κινδύνου</h2>")
-    P.append(f"<img src='{fig_npv(res)}' alt='Κατανομή NPV'>")
-    P.append(f"<img src='{fig_sensitivity(res)}' alt='Πηγές αβεβαιότητας'>")
-    P.append(f"<img src='{fig_tornado(res)}' alt='Tornado'>")
+    P.append(f"<img class='sm' src='{fig_npv(res)}' alt='Κατανομή NPV'>")
+    P.append(f"<img class='sm' src='{fig_sensitivity(res)}' alt='Πηγές αβεβαιότητας'>")
+    P.append(f"<img class='md' src='{fig_tornado(res)}' alt='Tornado'>")
     dn = res["risk"]["downside"]
     lab = res["risk"]["labels"]
     worst_scen = max(dn["scenario"].items(), key=lambda kv: kv[1])
@@ -355,7 +355,7 @@ def build_report(res: dict, out_dir: str | Path) -> Path:
     P.append("<h3>Τραπεζική εικόνα</h3>")
     fin = res["finance"]
     P.append(f"<p>Δάνειο {pct(fin['gearing'], 0)} του κόστους, {fin['debt_tenor_years']} έτη, επιτόκιο {pct(fin['debt_rate'])}. Ο δείκτης υπολογίζεται μόνο στις πρόσθετες ροές της μπαταρίας, χωρίς τις ροές του πάρκου. Η τράπεζα κοιτά τον κακό χρόνο, όχι τον μέσο.</p>")
-    P.append(f"<img src='{fig_dscr(res)}' alt='DSCR'>")
+    P.append(f"<img class='sm' src='{fig_dscr(res)}' alt='DSCR'>")
     P.append(_table(["Μέγεθος", "Τιμή"], [
         ["Ελάχιστος DSCR, P50", num(b["dscr_min_p50"], 2)], ["Ελάχιστος DSCR στο κακό σενάριο (P90)", num(b["dscr_min_p90"], 2)],
         ["Πιθανότητα DSCR κάτω από 1 σε κάποιο έτος", pct(b["prob_dscr_below_1"], 0)], ["Απαίτηση τράπεζας (υπόθεση)", num(fin["target_dscr"], 2)],
