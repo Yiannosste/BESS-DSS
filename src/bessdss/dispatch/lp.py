@@ -19,7 +19,7 @@ Unified AC/DC-coupled formulation (all powers in MW, energies in MWh, dt in hour
         (POWER)  cp_t + k_g * cg_t + d_t         <= P_batt          (also blocks most
                                                                     simultaneous charge/discharge)
         (SOC)    s_t = (1-sigma) s_{t-1} + eta_c dt (cp_t + k_g cg_t) - dt d_t / eta_d
-        (CYCLE)  sum_t dt d_t                    <= throughput_cap  (warranty limit, optional)
+        (CYCLE)  sum_{t in day} dt d_t           <= throughput_cap  (warranty limit per day, optional)
         (TERM)   s_T >= s_terminal
 
     objective (maximise)
@@ -102,10 +102,14 @@ class DispatchResult:
 class DispatchLP:
     """Re-usable HiGHS model for a fixed horizon length T and time step dt."""
 
-    def __init__(self, n_steps: int, dt_h: float, params: DispatchParams):
+    def __init__(self, n_steps: int, dt_h: float, params: DispatchParams, cycle_block_steps: int | None = None):
         self.T = int(n_steps)
         self.dt = float(dt_h)
         self.p = params
+        # the warranty cycle limit is applied per block (one day): with a two-day horizon the first
+        # day must not borrow the allowance of the second
+        self.block = int(cycle_block_steps) if cycle_block_steps else self.T
+        self.B = max(1, self.T // self.block)
         self._build()
 
     # ------------------------------------------------------------------ model construction
@@ -138,9 +142,9 @@ class DispatchLP:
         add(3 * T + t, icp, -p.eta_charge * dt)
         add(3 * T + t, icg, -p.eta_charge * dt * p.k)
         add(3 * T + t, idd, dt / p.eta_discharge)
-        # (CYCLE) row 4T
-        add(np.full(T, 4 * T), idd, dt)
-        A = sparse.csc_matrix((vals, (rows, cols)), shape=(4 * T + 1, n))
+        # (CYCLE) rows 4T .. 4T+B-1, one per block
+        add(4 * T + np.minimum(t // self.block, self.B - 1), idd, dt)
+        A = sparse.csc_matrix((vals, (rows, cols)), shape=(4 * T + self.B, n))
         return A, keep
 
     def _build(self):
@@ -162,7 +166,7 @@ class DispatchLP:
         rup[2 * T : 3 * T] = p.power_mw
         rlo[3 * T : 4 * T] = 0.0
         rup[3 * T : 4 * T] = 0.0
-        rup[4 * T] = _INF
+        rup[4 * T :] = _INF
         lp.row_lower_, lp.row_upper_ = rlo, rup
         lp.a_matrix_.format_ = highspy.MatrixFormat.kColwise
         lp.a_matrix_.start_ = A.indptr
@@ -222,7 +226,7 @@ class DispatchLP:
         rlo[3 * T] = rhs0
         rup[3 * T] = rhs0
         if p.max_cycles_per_day is not None:
-            rup[4 * T] = p.max_cycles_per_day * p.energy_usable_mwh * (T * dt / 24.0)
+            rup[4 * T :] = p.max_cycles_per_day * p.energy_usable_mwh * (self.block * dt / 24.0)
 
         h = self._h
         h.changeColsCost(self.n, self._col_idx, cost)
@@ -267,7 +271,7 @@ class DispatchLP:
         soc = x[4 * T :]
         at_upper = soc >= p.energy_usable_mwh - 1e-7
         dual_energy = np.where(at_upper, np.abs(col_dual[4 * T :]), 0.0)[sl]
-        dual_cycle = abs(row_dual[4 * T]) if p.max_cycles_per_day is not None else 0.0
+        dual_cycle = float(np.abs(row_dual[4 * T :]).sum()) if p.max_cycles_per_day is not None else 0.0
         return DispatchResult(
             e=x[0:T][sl].copy(),
             cp=x[T : 2 * T][sl].copy(),

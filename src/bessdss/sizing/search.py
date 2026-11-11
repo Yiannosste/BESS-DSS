@@ -80,7 +80,7 @@ def candidate_grid(
         for pf in power_fracs:
             p = round(pf * export * reg.max_battery_power_frac_of_export, 4)
             for m in energy_mults:
-                e = round(m * e_min, 4)
+                e = float(np.ceil(m * e_min * 1e4) / 1e4)  # round up: never below the legal minimum
                 dur = e * window / p
                 if duration_range[0] <= dur <= duration_range[1]:
                     out.append((cat, p, e))

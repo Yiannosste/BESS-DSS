@@ -290,7 +290,7 @@ def simulate_with_battery(
     key = (H, y.dt_h, dp)
     cache = lp_cache if lp_cache is not None else {}
     if key not in cache:
-        cache[key] = DispatchLP(H, y.dt_h, dp)
+        cache[key] = DispatchLP(H, y.dt_h, dp, cycle_block_steps=spd)
     lp = cache[key]
 
     T = n_days * spd
